@@ -3,4 +3,4 @@ This repository contains the documentation for connecting to the Sdu GenIA-L API
 ## Documentation
 
 - [Authentication](./docs/authentication.md)
-- [Response Parsing](./docs/response-parsing.md)
+- [Response Parsing](./docs/response_parsing.md)
