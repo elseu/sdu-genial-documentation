@@ -147,9 +147,6 @@ The API returns a streamed response containing different sections, each marked b
 ### Example Response
 
 ```plaintext
-[#START_OF_PREFIX#]
-{"session_id": "0cae4460-7f5a-4d9a-930b-e7e2de0e68e1", "step_id": "2eba654c-dcc4-48d0-8250-757b60bc5151"}
-[#END_OF_PREFIX#]
 [#START_OF_CONTENT_PART_1<ANSWER>#]>
 The capital of France is Paris.
 [#END_OF_CONTENT_PART_1<ANSWER>#]
@@ -207,8 +204,8 @@ Each section in the response is marked by start and end tokens in the following 
 
 For example:
 
-- **Start of Prefix**: `[#START_OF_PREFIX#]`
-- **End of Prefix**: `[#END_OF_PREFIX#]`
+- **Start of Metadata**: `[#START_OF_METADATA#]`
+- **End of Metadata**: `[#END_OF_METADATA#]`
 
 <a name="sections"></a>
 
@@ -216,10 +213,9 @@ For example:
 
 The response can contain the following sections:
 
-1. **Prefix**: Contains session-related metadata in JSON format. Always sent as 1 complete JSON chunk.
-2. **Content Part**: Contains content as Markdown.
-3. **Metadata**: Contains additional metadata in JSON format. Always sent as 1 complete JSON chunk.
-4. **Error**: Contains error information if any. Always sent as 1 complete JSON chunk.
+1. **Content Part**: Contains content as Markdown.
+2. **Metadata**: Contains additional metadata in JSON format. Always sent as 1 complete JSON chunk.
+3. **Error**: Contains error information if any. Always sent as 1 complete JSON chunk.
 
 **Content Parts** can have different types, specified in the start and end tokens:
 
@@ -400,27 +396,25 @@ interface ContentPart {
 }
 
 enum ContentPartStatus {
-  Streaming = 'streaming',
-  Done = 'done',
-  Error = 'error',
+  Streaming = "streaming",
+  Done = "done",
+  Error = "error",
 }
 
 enum ContentPartType {
-  Answer = 'answer',
-  Question = 'question',
-  Suggestion = 'suggestion',
-  System = 'system',
+  Answer = "answer",
+  Question = "question",
+  Suggestion = "suggestion",
+  System = "system",
 }
 
 enum StreamSection {
-  Prefix = 'prefix',
-  Metadata = 'metadata',
-  Error = 'error',
-  ContentPart = 'content_part',
+  Metadata = "metadata",
+  Error = "error",
+  ContentPart = "content_part",
 }
 
 type ChunkData =
-  | { key: StreamSection.Prefix; value: any }
   | { key: StreamSection.Metadata; value: any }
   | { key: StreamSection.ContentPart; value: ContentPart }
   | { key: StreamSection.Error; value: any };
@@ -443,14 +437,11 @@ interface ParseState {
  * @param chunkHandler - A callback function that gets called with the parsed chunks,
  * allowing the caller to process the data.
  */
-export async function readAndParseStream(
-  reader: ReadableStreamDefaultReader<Uint8Array>,
-  chunkHandler: ChunkCallback,
-) {
+export async function readAndParseStream(reader: ReadableStreamDefaultReader<Uint8Array>, chunkHandler: ChunkCallback) {
   const state: ParseState = {
-    buffer: '',
+    buffer: "",
     currentSection: null,
-    contentBuffer: '',
+    contentBuffer: "",
     contentPartIndex: null,
     contentPartType: null,
   };
@@ -466,10 +457,7 @@ export async function readAndParseStream(
  * @param reader - The stream reader for reading the data.
  * @param onChunk - A callback function invoked with each decoded chunk of data.
  */
-async function readStream(
-  reader: ReadableStreamDefaultReader<Uint8Array>,
-  onChunk: (chunk: string) => void,
-): Promise<void> {
+async function readStream(reader: ReadableStreamDefaultReader<Uint8Array>, onChunk: (chunk: string) => void): Promise<void> {
   const decoder = new TextDecoder();
   while (true) {
     const { done, value } = await reader.read();
@@ -493,9 +481,7 @@ function parseChunk(chunk: string, state: ParseState, onParsedChunk: ChunkCallba
 
   while (true) {
     if (!state.currentSection) {
-      const startTokenMatch = state.buffer.match(
-        /\[#START_OF_(PREFIX|CONTENT|METADATA|ERROR|CONTENT_PART_\d+(?:<[^>]+>)?)#\]/,
-      );
+      const startTokenMatch = state.buffer.match(/\[#START_OF_(CONTENT|METADATA|ERROR|CONTENT_PART_\d+(?:<[^>]+>)?)#\]/);
       if (startTokenMatch) {
         const newState = handleStartToken(state.buffer, startTokenMatch);
         Object.assign(state, newState);
@@ -506,7 +492,7 @@ function parseChunk(chunk: string, state: ParseState, onParsedChunk: ChunkCallba
             key: StreamSection.ContentPart,
             value: {
               type: state.contentPartType as ContentPartType,
-              value: '',
+              value: "",
               status: ContentPartStatus.Streaming,
               part_id: state.contentPartIndex,
             },
@@ -516,9 +502,7 @@ function parseChunk(chunk: string, state: ParseState, onParsedChunk: ChunkCallba
       }
     }
 
-    const endTokenMatch = state.buffer.match(
-      /\[#END_OF_(PREFIX|CONTENT|METADATA|ERROR|CONTENT_PART_\d+(?:<[^>]+>)?)#\]/,
-    );
+    const endTokenMatch = state.buffer.match(/\[#END_OF_(CONTENT|METADATA|ERROR|CONTENT_PART_\d+(?:<[^>]+>)?)#\]/);
 
     if (endTokenMatch) {
       const data = state.buffer.slice(0, endTokenMatch.index);
@@ -534,7 +518,7 @@ function parseChunk(chunk: string, state: ParseState, onParsedChunk: ChunkCallba
           key: StreamSection.ContentPart,
           value: {
             type: state.contentPartType as ContentPartType,
-            value: '',
+            value: "",
             status: ContentPartStatus.Done,
             part_id: state.contentPartIndex,
           },
@@ -552,7 +536,7 @@ function parseChunk(chunk: string, state: ParseState, onParsedChunk: ChunkCallba
 
     if (state.currentSection === StreamSection.ContentPart) {
       processContentPart(state.buffer, state, onParsedChunk);
-      state.buffer = '';
+      state.buffer = "";
     }
 
     break;
@@ -569,15 +553,9 @@ function parseChunk(chunk: string, state: ParseState, onParsedChunk: ChunkCallba
  */
 function handleStartToken(buffer: string, startTokenMatch: RegExpMatchArray): Partial<ParseState> {
   const section = startTokenMatch[1].toLowerCase();
-  const newSection = section.startsWith('content_part')
-    ? StreamSection.ContentPart
-    : (section as StreamSection);
-  const newContentPartIndex = section.startsWith('content_part')
-    ? section.split('_')[2].split('<')[0]
-    : null;
-  const newContentPartType = section.startsWith('content_part')
-    ? section.match(/<([^>]+)>/)?.[1].toLowerCase() || null
-    : null;
+  const newSection = section.startsWith("content_part") ? StreamSection.ContentPart : (section as StreamSection);
+  const newContentPartIndex = section.startsWith("content_part") ? section.split("_")[2].split("<")[0] : null;
+  const newContentPartType = section.startsWith("content_part") ? section.match(/<([^>]+)>/)?.[1].toLowerCase() || null : null;
   const newBuffer = buffer.slice(startTokenMatch.index! + startTokenMatch[0].length);
   return {
     buffer: newBuffer,
@@ -598,14 +576,13 @@ function handleEndToken(data: string, state: ParseState, onChunk: ChunkCallback)
   if (!data) return;
 
   switch (state.currentSection) {
-    case StreamSection.Prefix:
     case StreamSection.Metadata:
     case StreamSection.Error:
       try {
         const parsed = JSON.parse(data.trim());
         onChunk({ key: state.currentSection, value: parsed });
       } catch (error) {
-        console.error('Error parsing JSON:', error);
+        console.error("Error parsing JSON:", error);
       }
       break;
     case StreamSection.ContentPart:
@@ -645,97 +622,90 @@ const chunks: ChunkData[] = [];
 await readAndParseStream(reader, (chunk) => {
   chunks.push(chunk);
   // You can process the chunk here
-  console.log('Parsed chunk:', chunk);
+  console.log("Parsed chunk:", chunk);
 });
 
 // After parsing, 'chunks' will contain all the parsed data:
 [
   {
-    key: 'prefix',
+    key: "content_part",
     value: {
-      session_id: '0cae4460-7f5a-4d9a-930b-e7e2de0e68e1',
-      step_id: '2eba654c-dcc4-48d0-8250-757b60bc5151',
+      type: "answer",
+      value: "",
+      part_id: "1",
+      status: "streaming",
     },
   },
   {
-    key: 'content_part',
+    key: "content_part",
     value: {
-      type: 'answer',
-      value: '',
-      part_id: '1',
-      status: 'streaming',
+      type: "answer",
+      value: "The ",
+      part_id: "1",
     },
   },
   {
-    key: 'content_part',
+    key: "content_part",
     value: {
-      type: 'answer',
-      value: 'The ',
-      part_id: '1',
+      type: "answer",
+      value: "capital ",
+      part_id: "1",
     },
   },
   {
-    key: 'content_part',
+    key: "content_part",
     value: {
-      type: 'answer',
-      value: 'capital ',
-      part_id: '1',
+      type: "answer",
+      value: "of ",
+      part_id: "1",
     },
   },
   {
-    key: 'content_part',
+    key: "content_part",
     value: {
-      type: 'answer',
-      value: 'of ',
-      part_id: '1',
+      type: "answer",
+      value: "France ",
+      part_id: "1",
     },
   },
   {
-    key: 'content_part',
+    key: "content_part",
     value: {
-      type: 'answer',
-      value: 'France ',
-      part_id: '1',
+      type: "answer",
+      value: "is ",
+      part_id: "1",
     },
   },
   {
-    key: 'content_part',
+    key: "content_part",
     value: {
-      type: 'answer',
-      value: 'is ',
-      part_id: '1',
+      type: "answer",
+      value: "Paris.",
+      part_id: "1",
     },
   },
   {
-    key: 'content_part',
+    key: "content_part",
     value: {
-      type: 'answer',
-      value: 'Paris.',
-      part_id: '1',
+      type: "answer",
+      value: "",
+      part_id: "1",
+      status: "done",
     },
   },
   {
-    key: 'content_part',
-    value: {
-      type: 'answer',
-      value: '',
-      part_id: '1',
-      status: 'done',
-    },
-  },
-  {
-    key: 'metadata',
+    key: "metadata",
     value: {
       references: [
         {
-          chunk_id: '1',
-          title: 'Title',
-          chunk_txt: 'Chunk text',
-          chunk_url: 'https://example.com',
+          chunk_id: "1",
+          title: "Title",
+          chunk_txt: "Chunk text",
+          chunk_url: "https://example.com",
           link_attributes: {},
-          source: 'Source',
-          publication_identifier: 'Publication',
-          publisher_identifier: 'Publisher',
+          source: "Source",
+          publication_identifier: "Publication",
+          publisher_identifier: "Publisher",
         },
       ],
       output: {},
