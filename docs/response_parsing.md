@@ -281,6 +281,7 @@ The **metadata** section provides additional information about the response. It 
 
 - **references** (`array`): A list of references used in the response.
 - **output** (`object`, optional): Additional output information.
+- **smart_actions** (`array`, optional): A list of proposed followup actions.
 
 **Reference Structure**:
 
@@ -322,6 +323,15 @@ The **output** object can contain:
 
 - **option** (`string`): Selected workflow option (e.g., `"KEYWORDS_SEARCH"`, `"QUESTION_SEARCH"`, `"CHAT_TASK"`, `"SUMMARIZE_ECLI"`).
 - **matched_pattern** (`string`, optional): Pattern that was matched.
+
+**Smart Action Structure**:
+
+Each smart action object in the **smart_actions** array has the following properties:
+
+- **action** (`enum`): The type of action (e.g., `SmartActionType.Default`, `SmartActionType.Translate`).
+- **prompt** (`string`): The prompt associated with the action.
+- **label** (`string`): The user-facing label for the action.
+- **icon** (`enum`): The icon associated with the action (e.g., `SmartActionIcon.Scale`, `SmartActionIcon.Languages`).
 
 ---
 
