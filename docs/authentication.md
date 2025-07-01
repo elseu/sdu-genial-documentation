@@ -45,7 +45,7 @@ OpenID Connect (OIDC) is a protocol built on top of OAuth 2.0 that provides secu
 The endpoint for retrieving an access token is:
 
 ```
-POST https://federate.acc.ping.awssdu.nl/as/token.oauth2
+POST https://login.sdu.nl/as/token.oauth2
 ```
 
 <a name="required-parameters"></a>
@@ -66,7 +66,7 @@ To retrieve an access token, send a POST request to the token endpoint with the 
 ### Example Request
 
 ```http
-POST https://federate.acc.ping.awssdu.nl/as/token.oauth2
+POST https://login.sdu.nl/as/token.oauth2
 Content-Type: application/x-www-form-urlencoded
 
 client_id=your-client-id
@@ -113,21 +113,21 @@ Authorization: Bearer {access_token}
 
 ### Example Request: Authenticated API Call
 
-Below is an example of how to make an authenticated API request to the `/step` endpoint. For detailed information about the payload and response structure, refer to the `RESPONSE_PARSING` documentation.
+Below is an example of how to make an authenticated API request to the `/message` endpoint. For detailed information about the payload and response structure, refer to the `RESPONSE_PARSING` documentation.
 
 #### Endpoint Structure
 
 ```plaintext
-https://secure.{VERSION}.genial-ext.{ENVIRONMENT}.sduoneplatform.nl/step
+https://genial-api.sdu.nl/{VERSION}/{ENDPOINT}
 ```
 
 - **`{VERSION}`**: Replace with the API version (e.g., `v1`, `v2`, or `v3`).
-- **`{ENVIRONMENT}`**: Replace with the environment (`acc` for acceptance, `prod` for production).
+- **`{ENDPOINT}`**: Replace with the endpoint belonging to the version (`step` for v1, `message` for v2+).
 
 #### Example Request
 
 ```http
-POST https://secure.v1.genial-ext.acc.sduoneplatform.nl/step
+POST https://genial-api.sdu.nl/v2/message
 Authorization: Bearer eyJraWQiOi...
 ```
 

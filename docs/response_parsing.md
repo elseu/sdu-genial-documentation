@@ -36,16 +36,16 @@ Before parsing the response, it's essential to understand how to structure the A
 ### Request Endpoint
 
 ```plaintext
-https://secure.{VERSION}.genial-ext.{ENVIRONMENT}.sduoneplatform.nl/step
+https://genial-api.sdu.nl/{VERSION}/{ENDPOINT}
 ```
 
 - **`{VERSION}`**: Replace with the API version (e.g., `v1`, `v2`, or `v3`).
-- **`{ENVIRONMENT}`**: Replace with the environment (`acc` for acceptance, `prod` for production).
+- **`{ENDPOINT}`**: Replace with the endpoint belonging to the version (`step` for v1, `message` for v2+).
 
 #### Example Request
 
 ```http
-POST https://secure.v1.genial-ext.acc.sduoneplatform.nl/step
+POST https://genial-api.sdu.nl/v2/message
 Authorization: Bearer eyJraWQiOi...
 ```
 
@@ -53,18 +53,7 @@ Authorization: Bearer eyJraWQiOi...
 
 ### Request Rate Limiting
 
-To prevent server overload, the API endpoints enforce strict rate-limiting policies. These limits ensure fair usage and system stability. The enforced rate limits are as follows:
-
-```yaml
-- window: PT1S # 1-second window
-  limit: 5 # Maximum 5 requests
-- window: PT1M # 1-minute window
-  limit: 20 # Maximum 20 requests
-- window: PT1H # 1-hour window
-  limit: 200 # Maximum 200 requests
-- window: P1D # 1-day window
-  limit: 1000 # Maximum 1000 requests
-```
+To prevent server overload, the API endpoints enforce strict rate-limiting policies based on AWS Usage plans. These limits ensure fair usage and system stability. Please contact your technical consultant for more information about your current usage plan.
 
 <a name="request-payload"></a>
 
