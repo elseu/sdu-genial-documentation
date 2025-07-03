@@ -54,12 +54,12 @@ POST https://login.sdu.nl/as/token.oauth2
 
 To retrieve an access token, send a POST request to the token endpoint with the following parameters in the body, encoded as `application/x-www-form-urlencoded`:
 
-| Parameter       | Description                                   | Required | Example Value          |
-| --------------- | --------------------------------------------- | -------- | ---------------------- |
-| `client_id`     | The client ID issued during registration.     | Yes      | `{your-client-id}`     |
-| `client_secret` | The client secret issued during registration. | Yes      | `{your-client-secret}` |
-| `grant_type`    | The grant type for the request.               | Yes      | `client_credentials`   |
-| `scope`         | The scope(s) requested for the token.         | Yes      | `openid sdu-gen-ai`    |
+| Parameter       | Description                                   | Required | Example Value           |
+| --------------- | --------------------------------------------- | -------- | ----------------------- |
+| `client_id`     | The client ID issued during registration.     | Yes      | `{your-client-id}`      |
+| `client_secret` | The client secret issued during registration. | Yes      | `{your-client-secret}`  |
+| `grant_type`    | The grant type for the request.               | Yes      | `client_credentials`    |
+| `scope`         | The scope(s) requested for the token.         | Yes      | `openid sdu-genial-api` |
 
 <a name="example-request"></a>
 
@@ -72,7 +72,7 @@ Content-Type: application/x-www-form-urlencoded
 client_id=your-client-id
 &client_secret=your-client-secret
 &grant_type=client_credentials
-&scope=openid sdu-gen-ai
+&scope=openid sdu-genial-api
 ```
 
 <a name="response"></a>
