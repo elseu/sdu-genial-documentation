@@ -45,7 +45,7 @@ https://genial-api.sdu.nl/{VERSION}/{ENDPOINT}
 #### Example Request
 
 ```http
-POST https://genial-api.sdu.nl/v2/message
+POST https://genial-api.sdu.nl/v3/message
 Authorization: Bearer eyJraWQiOi...
 ```
 
@@ -61,7 +61,6 @@ To prevent server overload, the API endpoints enforce strict rate-limiting polic
 
 Besides the required Authorization header, the API expects a JSON payload with the following structure:
 
-- **applicationKey** (`string`): The application key identifying your application.
 - **feature** (`string`): The feature you are accessing (e.g., `"chat"`).
 - **messages** (`array`): An array of message objects representing the conversation history.
 
@@ -82,7 +81,6 @@ Each content part in the **content** array is an object with the following prope
 
 ```json
 {
-  "applicationKey": "your_application_key",
   "feature": "chat",
   "messages": [
     {
@@ -118,7 +116,6 @@ Each content part in the **content** array is an object with the following prope
 
 **Explanation**:
 
-- The **applicationKey** is set to your application's key.
 - The **feature** is set to `"chat"`.
 - The **messages** array contains the conversation history.
   - The first message is from the user, containing a question.
