@@ -127,7 +127,7 @@ https://genial-api.sdu.nl/{VERSION}/{ENDPOINT}
 #### Example Request
 
 ```http
-POST https://genial-api.sdu.nl/v2/message
+POST https://genial-api.sdu.nl/v3/message
 Authorization: Bearer eyJraWQiOi...
 ```
 
