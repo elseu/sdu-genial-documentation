@@ -9,7 +9,7 @@ This repository contains the documentation for connecting to the Sdu GenIA-L API
 
 ### V3
 
-#### 3.6.0
+#### 3.6.0 (09-09-2025)
 
 - Increase max input query size to 6000 characters
 - Add keep alive (zero-width-byte) chunks for long idle time queries
