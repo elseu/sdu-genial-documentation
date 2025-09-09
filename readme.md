@@ -14,7 +14,7 @@ This repository contains the documentation for connecting to the Sdu GenIA-L API
 - Increase max input query size to 6000 characters
 - Add keep alive (zero-width-byte) chunks for long idle time queries
 
-#### 3.0.0 (21-08-2025)
+#### 3.3.0 (21-08-2025)
 
 - Migrate GPT models from GPT-4o to GPT-4.1 and GPT-5
 - Introduction of agentic workflows for composite (long/complex) questions
