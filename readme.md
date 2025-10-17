@@ -7,6 +7,15 @@ This repository contains the documentation for connecting to the Sdu GenIA-L API
 
 ## Changelog
 
+### V4
+
+#### 4.0.0 (20-10-2025)
+
+- BREAKING CHANGE: Introduced Reasoning of the agent as output into the response
+- BREAKING CHANGE: Stopped sending contentpart type <SYSTEM> messages and replaced them with a new format for Reasoning
+- Improvements to markdown formatting in answers
+- Speed improvements by moving some core components back to GPT 4.1
+
 ### V3
 
 #### 3.6.0 (09-09-2025)

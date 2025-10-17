@@ -99,7 +99,8 @@ Each content part in the **content** array is an object with the following prope
           "type": "answer",
           "value": "The capital of France is Paris."
         }
-      ]
+      ],
+      "metadata": {...}
     },
     {
       "role": "user",
@@ -119,7 +120,7 @@ Each content part in the **content** array is an object with the following prope
 - The **feature** is set to `"chat"`.
 - The **messages** array contains the conversation history.
   - The first message is from the user, containing a question.
-  - The second message is from the assistant, containing an answer.
+  - The second message is from the assistant, containing an answer and all the metadata.
   - The third message is from the user, containing a followup question.
 
 ---
@@ -154,12 +155,9 @@ The capital of France is Paris.
 ### Example ERROR response
 
 ```plaintext
-[#START_OF_CONTENT_PART_1<SYSTEM>#]
-Vraag geformuleerd:
-[#END_OF_CONTENT_PART_1<SYSTEM>#]
-[#START_OF_CONTENT_PART_2<SYSTEM>#]
-Wat is loonheffing?
-[#END_OF_CONTENT_PART_2<SYSTEM>#]
+[#START_OF_CONTENT_PART_1<ANSWER>#]>
+The capital of France is Paris.
+[#END_OF_CONTENT_PART_1<ANSWER>#]
 [#START_OF_ERROR#]
 {
   "description": "SduGenAIError: ComponentError: SparseRetrieverError: retrieved no results for query wat is loonheffing?.",
@@ -221,7 +219,7 @@ Content parts can be of various types:
 - **ANSWER**: An answer from the assistant.
 - **QUESTION**: A question from the user.
 - **SUGGESTION**: A suggestion for the user.
-- **SYSTEM**: System messages.
+- **JSON**: A message with a JSON body.
 
 <a name="content-structure"></a>
 
@@ -245,10 +243,11 @@ Each content part can be extracted to the following properties useful to the app
 - **SUGGESTION**:
   - **type**: `"suggestion"`
   - **value**: The assistant's suggested text in Markdown.
-- **SYSTEM**:
-
-  - **type**: `"system"`
-  - **value**: System message text in Markdown.
+- **JSON**:
+  - **type**: `"json"`
+  - **value**: The complete JSON payload containing component data
+  - **component**: The component identifier (e.g., "reasoning")
+  - **props**: Component-specific data extracted from the `value` field
 
 <a name="content-markdown"></a>
 
@@ -258,6 +257,311 @@ It's important to know that the GenIA-L API responds with Markdown in the Conten
 
 - **Footnotes**:
   Footnotes are returned as `<InlineReference ...props>{number}</InlineReference>` with the same props on it as the [normal references in the Metadata](#metadata-structure). If you do not want to support these footnotes you will need to configure your Markdown parser to exclude specific nodes, all HTML, or manually strip the response of the open and closing tags.
+
+<a name="json-content-part"></a>
+
+### Content Part JSON
+
+A JSON content part is a structured response that contains information that can be used to render different UI elements. Unlike regular content parts that contain text, JSON content parts provide structured data that applications can use to build interactive components.
+
+In V4 we introduced JSON content parts as a new content type. These structured responses allow the API to provide rich, interactive data that can be rendered as specialized UI components. The first type of JSON content part we've implemented is the **Reasoning** component, which exposes the AI's thinking process.
+
+#### JSON Content Part Structure
+
+All JSON content parts follow this general structure:
+
+```typescript
+{
+  "type": "json",
+  "component": string,        // The component type identifier
+  "value": object,           // Component-specific data
+  "part_id": string,         // Optional part identifier
+  "status": string           // Optional status (streaming, done, error)
+}
+```
+
+#### JSON Content Part Streaming Behavior
+
+**Important**: JSON content parts are streamed as **complete chunks** and are **overwritten** with new chunks that have the same `PART_N` ID. This means:
+
+- **Not deltas**: New chunks are not incremental updates - they are complete new versions of the state
+- **Overwrite behavior**: Each new chunk with the same part ID completely replaces the previous version
+- **Final state**: You should always use the final JSON content part of a given `PART_N` to get the complete state
+
+**Example streaming sequence:**
+
+```plaintext
+[#START_OF_CONTENT_PART_1<JSON>#]
+{
+  "type":"json",
+  "component":"reasoning",
+  "value": {
+    "title":"Aan het nadenken"
+  }
+}
+[#END_OF_CONTENT_PART_1<JSON>#]
+
+[#START_OF_CONTENT_PART_1<JSON>#]
+{
+  "type":"json",
+  "component":"reasoning",
+  "value": {
+    "title":"Klaar met nadenken",
+    "is_reasoning":false,
+    "steps":[
+      {
+        "type":"thought",
+        "label":"Vraag geformuleerd",
+        "content":"Wat is de vennootschapsbelasting (vpb)?"
+      }
+    ]
+  }
+}
+[#END_OF_CONTENT_PART_1<JSON>#]
+```
+
+In this example, the second chunk completely overwrites the first one. Your application should:
+
+1. **Replace** the previous state with the new complete state
+2. **Not merge** or diff the content
+3. **Use the final version** when processing the complete response
+
+#### Available JSON Components
+
+Currently, the following JSON components are available:
+
+1. **Reasoning Component** (`component: "reasoning"`) - Exposes AI thinking process
+2. _More components will be added in future versions_
+
+#### Reasoning Component
+
+The reasoning component is the first JSON content part type. This reasoning payload allows us to expose the thinking of the GenIA-L API and let consumers render this reasoning in their application. The content that used to be in the SYSTEM messages has been moved to this reasoning component:
+
+```
+[#START_OF_CONTENT_PART_1<JSON>#]
+{
+  "type":"json",
+  "component":"reasoning",
+  "value":
+    {
+      "title":"Klaar met nadenken",
+      "is_reasoning":false,
+      "steps":[
+        {
+          "type":"thought",
+          "label":"Vraag geformuleerd ",
+          "content":"Wat is de vennootschapsbelasting (vpb)?"
+        }
+      ]
+    }
+  }
+[#END_OF_CONTENT_PART_1<JSON>#]
+```
+
+### Reasoning Component
+
+The reasoning component is a structured JSON payload that exposes the AI's thinking process and decision-making steps. This component allows applications to render the AI's reasoning in a user-friendly way, providing transparency into how the AI arrived at its conclusions.
+
+#### Structure
+
+The reasoning component follows this structure:
+
+```typescript
+{
+  "type": "json",
+  "component": "reasoning",
+  "value": {
+    "title": string,
+    "is_reasoning": boolean,
+    "steps": ReasoningStep[]
+  }
+}
+```
+
+#### Properties
+
+- **`title`** (`string`): A descriptive title for the reasoning process (e.g., "Klaar met nadenken", "Thinking complete").
+- **`is_reasoning`** (`boolean`, optional): Indicates whether the AI is currently in a reasoning state. When `false`, it means the reasoning process is complete.
+- **`steps`** (`array`): An array of reasoning steps that show the AI's thought process.
+
+#### Reasoning Steps
+
+Each step in the `steps` array can be one of two types:
+
+##### Thought Steps
+
+Thought steps represent the AI's internal reasoning and analysis:
+
+```typescript
+{
+  "type": "thought",
+  "label": string,        // Optional descriptive label
+  "content": string       // The actual thought content
+}
+```
+
+**Example:**
+
+```json
+{
+  "type": "thought",
+  "label": "Vraag geformuleerd",
+  "content": "Wat is de vennootschapsbelasting (vpb)?"
+}
+```
+
+##### Action Steps
+
+Action steps represent specific actions or decisions the AI is taking:
+
+```typescript
+{
+  "type": "action",
+  "label": string,        // Optional descriptive label
+  "content": ActionContentItem[]
+}
+```
+
+Where `ActionContentItem` has the structure:
+
+```typescript
+{
+  "label": string         // Description of the action item
+}
+```
+
+**Example:**
+
+```json
+{
+  "type": "action",
+  "label": "Searching for information",
+  "is_reasoning": true,
+  "content": [
+    {
+      "label": "Querying legal database"
+    },
+    {
+      "label": "Analyzing tax regulations"
+    }
+  ]
+}
+```
+
+#### Complete Example
+
+Here's a complete example of a reasoning component:
+
+```json
+{
+  "type": "json",
+  "component": "reasoning",
+  "value": {
+    "title": "Klaar met nadenken",
+    "is_reasoning": false,
+    "steps": [
+      {
+        "type": "thought",
+        "label": "Vraag geformuleerd",
+        "content": "Wat is de vennootschapsbelasting (vpb)?"
+      },
+      {
+        "type": "action",
+        "label": "Zoeken naar informatie",
+        "content": [
+          {
+            "label": "Zoeken in juridische database"
+          },
+          {
+            "label": "Analyseren van belastingregelgeving"
+          }
+        ]
+      },
+      {
+        "type": "thought",
+        "label": "Analyse voltooid",
+        "content": "Ik heb relevante informatie gevonden over vennootschapsbelasting en kan nu een uitgebreid antwoord geven."
+      }
+    ]
+  }
+}
+```
+
+#### Implementation Guidelines
+
+When implementing support for the reasoning component:
+
+1. **Parse the JSON structure** carefully, ensuring all required fields are present.
+2. **Handle the `is_reasoning` flag** to show appropriate UI states (e.g., loading indicators when `true`).
+3. **Render steps sequentially** to show the progression of the AI's thinking.
+4. **Differentiate between step types** using appropriate visual indicators (e.g., icons for thoughts vs. actions).
+5. **Support optional labels** to provide context for each step.
+6. **Handle streaming updates** as the reasoning process evolves.
+
+#### UI Considerations
+
+- **Progressive disclosure**: Consider showing a summary initially with the option to expand detailed reasoning.
+- **Visual hierarchy**: Use different styling for thought steps vs. action steps.
+- **Loading states**: Show appropriate indicators when `is_reasoning` is `true`.
+- **Accessibility**: Ensure reasoning steps are accessible to screen readers and other assistive technologies.
+
+#### Implementing Support for JSON Components
+
+When implementing support for JSON content parts:
+
+1. **Check the component type**: Use the `component` field to determine which component you're dealing with
+2. **Parse component-specific data**: Access the `props` field for component-specific data
+3. **Handle unknown components gracefully**: Provide fallback behavior for components you don't recognize
+4. **Support streaming updates**: Handle status changes as components stream in
+5. **Handle overwrite behavior**: Always replace previous state with new complete state (don't merge)
+
+#### Handling Multiple JSON Chunks with Same Part ID
+
+When processing a complete response, you may encounter multiple JSON content parts with the same part ID. You need to:
+
+1. **Extract the final version**: Use the last JSON content part for each part ID
+2. **Update your regex**: Ensure your parsing logic handles multiple chunks with the same ID
+3. **State management**: Always overwrite your local state with the complete new object
+
+**Regex for extracting final JSON content parts:**
+
+```typescript
+// This regex will match the json contentparts
+const finalJsonParts = response.match(/\[#START_OF_CONTENT_PART_(\d+)<JSON>#\][\s\S]*?\[#END_OF_CONTENT_PART_\1<JSON>#\]/g);
+
+// Or for a more comprehensive approach, extract all and keep the last one per part ID
+const allJsonParts = response.match(/\[#START_OF_CONTENT_PART_(\d+)<JSON>#\][\s\S]*?\[#END_OF_CONTENT_PART_\1<JSON>#\]/g);
+const partMap = new Map();
+
+allJsonParts?.forEach((part) => {
+  const partId = part.match(/\[#START_OF_CONTENT_PART_(\d+)<JSON>#\]/)?.[1];
+  if (partId) {
+    partMap.set(partId, part);
+  }
+});
+
+// partMap now contains only the final version of each part
+```
+
+#### Future JSON Components
+
+The JSON content part system is designed to be extensible. Future versions may include additional components such as:
+
+- **Interactive forms** for data collection
+- **Rich media components** for displaying files and images
+- **Progress indicators** for long-running operations
+- **Interactive charts** for data visualization
+
+When new components are introduced, they will follow the same structure with a unique `component` identifier and component-specific `props`.
+
+#### Migration from V3
+
+In V3, reasoning information was included in SYSTEM messages. In V4, this has been moved to the dedicated reasoning component for better structure and parsing. When migrating from V3:
+
+- Look for JSON content parts with `component: "reasoning"`
+- Parse the structured `value` object instead of extracting from SYSTEM messages
+- Update your UI to handle the new structured format
+- Implement a component router to handle different JSON component types
 
 <a name="metadata-structure"></a>
 
@@ -353,7 +657,10 @@ Here is the high-level parsing logic:
        - Remove the token from the buffer.
    - **If the current section is `CONTENT_PART`**:
      - **Process the content incrementally** (especially important for streaming text).
+     - **For JSON content parts**: Handle overwrite behavior - new chunks with the same part ID replace previous versions.
 3. **Continue** until the end of the stream.
+
+**Special consideration for JSON content parts**: When processing a complete response, you may encounter multiple JSON content parts with the same part ID. Always use the final version of each part ID, as earlier versions are overwritten by later ones.
 
 <a name="state"></a>
 
@@ -386,9 +693,11 @@ Below is an example of how to implement the parser in TypeScript.
 
 interface ContentPart {
   type: string;
-  value: string;
+  value: string | object;
   part_id: string | null;
   status?: string;
+  component?: string;
+  props?: object;
 }
 
 enum ContentPartStatus {
@@ -402,6 +711,7 @@ enum ContentPartType {
   Question = "question",
   Suggestion = "suggestion",
   System = "system",
+  Json = "json",
 }
 
 enum StreamSection {
@@ -597,14 +907,44 @@ function handleEndToken(data: string, state: ParseState, onChunk: ChunkCallback)
  * @param onChunk - The callback to handle the parsed content part.
  */
 function processContentPart(content: string, state: ParseState, onChunk: ChunkCallback) {
-  onChunk({
-    key: StreamSection.ContentPart,
-    value: {
-      type: (state.contentPartType as ContentPartType) || ContentPartType.Question,
-      value: content,
-      part_id: state.contentPartIndex,
-    },
-  });
+  const contentType = (state.contentPartType as ContentPartType) || ContentPartType.Question;
+
+  // Handle JSON content parts specially
+  // Note: JSON content parts with the same part_id overwrite previous versions
+  if (contentType === ContentPartType.Json) {
+    try {
+      const parsedJson = JSON.parse(content.trim());
+      onChunk({
+        key: StreamSection.ContentPart,
+        value: {
+          type: contentType,
+          value: parsedJson,
+          part_id: state.contentPartIndex,
+          component: parsedJson.component,
+          props: parsedJson.value,
+        },
+      });
+    } catch (error) {
+      // If JSON parsing fails, treat as regular content
+      onChunk({
+        key: StreamSection.ContentPart,
+        value: {
+          type: contentType,
+          value: content,
+          part_id: state.contentPartIndex,
+        },
+      });
+    }
+  } else {
+    onChunk({
+      key: StreamSection.ContentPart,
+      value: {
+        type: contentType,
+        value: content,
+        part_id: state.contentPartIndex,
+      },
+    });
+  }
 }
 ```
 
@@ -615,11 +955,64 @@ function processContentPart(content: string, state: ParseState, onChunk: ChunkCa
 const reader = responseStream.getReader();
 const chunks: ChunkData[] = [];
 
+// Track JSON content parts by part_id to handle overwrites
+const jsonContentParts = new Map<string, any>();
+
 await readAndParseStream(reader, (chunk) => {
   chunks.push(chunk);
-  // You can process the chunk here
-  console.log("Parsed chunk:", chunk);
+
+  // Handle different types of chunks
+  if (chunk.key === "content_part") {
+    const contentPart = chunk.value;
+
+    // Handle JSON content parts
+    if (contentPart.type === "json") {
+      const partId = contentPart.part_id;
+      const component = contentPart.component;
+      const props = contentPart.props;
+
+      // Store/overwrite the JSON content part for this part_id
+      jsonContentParts.set(partId, { component, props });
+
+      switch (component) {
+        case "reasoning":
+          console.log("Reasoning component updated:", props);
+
+          // Render reasoning steps
+          props.steps.forEach((step, index) => {
+            if (step.type === "thought") {
+              console.log(`Thought ${index + 1}: ${step.content}`);
+            } else if (step.type === "action") {
+              console.log(`Action ${index + 1}: ${step.label}`);
+              step.content.forEach((item, itemIndex) => {
+                console.log(`  - ${item.label}`);
+              });
+            }
+          });
+          break;
+
+        // Future components can be handled here
+        // case "other_component":
+        //   handleOtherComponent(props);
+        //   break;
+
+        default:
+          console.log("Unknown JSON component:", component, props);
+          break;
+      }
+    } else {
+      // Handle other content parts
+      console.log("Content part:", contentPart);
+    }
+  } else {
+    // Handle metadata or error chunks
+    console.log("Parsed chunk:", chunk);
+  }
 });
+
+// After streaming is complete, jsonContentParts contains the final state
+// of each JSON content part (latest version for each part_id)
+console.log("Final JSON content parts:", jsonContentParts);
 
 // After parsing, 'chunks' will contain all the parsed data:
 [
@@ -687,6 +1080,40 @@ await readAndParseStream(reader, (chunk) => {
       value: "",
       part_id: "1",
       status: "done",
+    },
+  },
+  {
+    key: "content_part",
+    value: {
+      type: "json",
+      value: {
+        type: "json",
+        component: "reasoning",
+        value: {
+          title: "Klaar met nadenken",
+          is_reasoning: false,
+          steps: [
+            {
+              type: "thought",
+              label: "Vraag geformuleerd",
+              content: "Wat is de vennootschapsbelasting (vpb)?",
+            },
+          ],
+        },
+      },
+      part_id: "2",
+      component: "reasoning",
+      props: {
+        title: "Klaar met nadenken",
+        is_reasoning: false,
+        steps: [
+          {
+            type: "thought",
+            label: "Vraag geformuleerd",
+            content: "Wat is de vennootschapsbelasting (vpb)?",
+          },
+        ],
+      },
     },
   },
   {
