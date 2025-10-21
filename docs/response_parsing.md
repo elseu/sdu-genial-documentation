@@ -545,18 +545,11 @@ allJsonParts?.forEach((part) => {
 
 #### Future JSON Components
 
-The JSON content part system is designed to be extensible. Future versions may include additional components such as:
-
-- **Interactive forms** for data collection
-- **Rich media components** for displaying files and images
-- **Progress indicators** for long-running operations
-- **Interactive charts** for data visualization
-
-When new components are introduced, they will follow the same structure with a unique `component` identifier and component-specific `props`.
+The JSON content part system is designed to be extensible. When new components are introduced, they will follow the same structure with a unique `component` identifier and component-specific `props`.
 
 #### Migration from V3
 
-In V3, reasoning information was included in SYSTEM messages. In V4, this has been moved to the dedicated reasoning component for better structure and parsing. When migrating from V3:
+In V3, some reasoning information was included in SYSTEM messages. In V4, this has been moved to the dedicated reasoning component for better structure and parsing. When migrating from V3:
 
 - Look for JSON content parts with `component: "reasoning"`
 - Parse the structured `value` object instead of extracting from SYSTEM messages
