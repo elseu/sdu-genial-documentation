@@ -15,6 +15,7 @@ This repository contains the documentation for connecting to the Sdu GenIA-L API
 - BREAKING CHANGE: Stopped sending contentpart type <SYSTEM> messages and replaced them with a new format for Reasoning
 - Improvements to markdown formatting in answers
 - Speed improvements by moving some core components back to GPT 4.1
+- Add the new Prompt Enhancer feature through the `/enhance-prompt` endpoint allowing for realtime (or workflow integrated) prompt suggestions.
 
 ### V3
 
