@@ -9,7 +9,7 @@ This guide provides detailed instructions for authenticating with the GenIA-L AP
 1. [Introduction](#introduction)
 2. [Prerequisites](#prerequisites)
 3. [Authentication Flow Overview](#authentication-flow-overview)
-   - [Basic Flow (No Tenant)](#basic-flow)
+   - [Basic Flow (Single Tenant)](#basic-flow)
    - [Multi-Tenant Flow](#multi-tenant-flow)
 4. [Scope Requirements](#scope-requirements)
 5. [Retrieving an Access Token](#retrieving-an-access-token)
@@ -20,9 +20,9 @@ This guide provides detailed instructions for authenticating with the GenIA-L AP
    - [Response](#response)
 6. [Making API Requests](#making-api-requests)
    - [Endpoint Structure](#endpoint-structure)
-   - [Basic API Access (Without Tenant)](#basic-api-access)
+   - [Basic API Access (Single Tenant)](#basic-api-access)
    - [Multi-Tenant API Access](#multi-tenant-api-access)
-7. [Setting Up Tenant Connection](#setting-up-tenant-connection)
+7. [Setting Up Multi Tenant Connection](#setting-up-tenant-connection)
    - [Check Connection Status](#check-connection-status)
    - [Get Management URL](#get-management-url)
    - [Complete the Connection](#complete-the-connection)
@@ -44,8 +44,8 @@ The GenIA-L API uses OpenID Connect (OIDC) and OAuth 2.0 to authenticate externa
 
 The API supports two authentication modes:
 
-- **Basic API Access**: General API access
-- **Multi-Tenant Access**: Tenant specific API access with the `X-API-Tenant-Id` header
+- **Basic API Access**: General Single Tenant API access
+- **Multi-Tenant Access**: Multi Tenant API access
 
 ---
 
@@ -56,7 +56,7 @@ The API supports two authentication modes:
 Before you start, you'll need:
 
 1. **OAuth Client Credentials** (`client_id` and `client_secret`) issued during registration
-2. **API Version** you want to access (e.g., `v1`, `v2`, `v3`, `v4`)
+2. **API Version** you want to access (e.g., `v1`, `v2`, `v3`, `v4`, `v5`)
 
 If you don't have credentials yet, please contact your account manager.
 
@@ -68,12 +68,12 @@ If you don't have credentials yet, please contact your account manager.
 
 <a name="basic-flow"></a>
 
-### Basic Flow (No Tenant)
+### Basic Flow (Single Tenant)
 
 ```
 1. Get OAuth Token (with scopes: openid sdu-genial-api)
    ↓
-2. Make API Request with Authorization header
+2. Make API Request with Authorization + X-API-Tenant-Id headers
 ```
 
 <a name="multi-tenant-flow"></a>
@@ -90,7 +90,7 @@ If you don't have credentials yet, please contact your account manager.
    └─ Connection Set Up → BASIC plan (standard rate limits)
 ```
 
-> **Note:** You can start making tenant requests immediately with just the `X-API-Tenant-Id` header. Without a tenant connection, you'll have **TRIAL** access with strict rate limiting. To get **BASIC** access with higher limits, set up a tenant connection (see [Setting Up Tenant Connection](#setting-up-tenant-connection)).
+> **Note:** You can start making tenant requests immediately with just the `X-API-Tenant-Id` header. Without an active tenant connection, you'll have **TRIAL** access with strict rate limiting. To get **BASIC** access with higher limits, set up a tenant connection (see [Setting Up Tenant Connection](#setting-up-tenant-connection)).
 
 ---
 
@@ -104,9 +104,9 @@ The scopes you request determine what access you'll have:
 | ---------------------------- | ------------------------ | -------------------------------------- |
 | `openid`                     | Base OIDC authentication | All requests                           |
 | `sdu-genial-api`             | GenIA-L API access       | All requests                           |
-| `sdu-genial-api-multitenant` | Tenant-specific features | Requests with `X-API-Tenant-Id` header |
+| `sdu-genial-api-multitenant` | Multi-tenant-specific features | Requests for multiple tenants |
 
-> **Important:** Include `sdu-genial-api-multitenant` in your token request if you plan to use tenant features. This scope must be present in the initial token - you cannot add it to an existing token.
+> **Important:** Include `sdu-genial-api-multitenant` in your token request if you plan to use multi tenant features. This scope must be present in the initial token - you cannot add it to an existing token.
 
 ---
 
@@ -207,18 +207,19 @@ All GenIA-L API requests follow this structure:
 https://genial-api.sdu.nl/{VERSION}/{ENDPOINT}
 ```
 
-- **`{VERSION}`**: API version (e.g., `v1`, `v2`, `v3`, `v4`)
+- **`{VERSION}`**: API version (e.g., `v1`, `v2`, `v3`, `v4`, `v5`)
 - **`{ENDPOINT}`**: Endpoint name (e.g., `step` for v1, `message` for v2+)
 
 <a name="basic-api-access"></a>
 
-### Basic API Access (Without Tenant)
+### Basic API Access (Single Tenant)
 
 For basic API access:
 
 ```bash
-curl -X POST https://genial-api.sdu.nl/v4/message \
+curl -X POST https://genial-api.sdu.nl/v5/message \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "X-API-Tenant-Id: YOUR CLIENT_ID" \
   -H "Content-Type: application/json" \
   -d '{ your request payload }'
 ```
@@ -231,12 +232,12 @@ This provides **default access** - usage plan assignment happens manually during
 
 ### Multi-Tenant API Access
 
-To access the API with multiple Tenants, include the `X-API-Tenant-Id` header. The TenantId needs to be an ID unique to each of your tenants:
+To access the API with multiple Tenants, provide unique identifiers for your tenants to the `X-API-Tenant-Id` header. The TenantId needs to be an ID unique to each of your tenants:
 
 ```bash
 curl -X POST https://genial-api.sdu.nl/v4/message \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
-  -H "X-API-Tenant-Id: your-tenant-id" \
+  -H "X-API-Tenant-Id: your-unique-tenant-id" \
   -H "Content-Type: application/json" \
   -d '{ your request payload }'
 ```
@@ -252,7 +253,7 @@ curl -X POST https://genial-api.sdu.nl/v4/message \
 
 ## Setting Up Tenant Connection
 
-You can use tenant features immediately with just the `X-API-Tenant-Id` header, but you'll be on the **TRIAL** plan with strict rate limits. To get **BASIC** plan access with higher limits, set up a tenant connection.
+You can use mulit tenant features immediately with just the unique tenant identifier in the `X-API-Tenant-Id` header, but you'll be on the **TRIAL** plan with strict rate limits. To get **BASIC** plan access with higher limits, set up a tenant connection.
 
 > **Prerequisites:** Your access token must include the `sdu-genial-api-multitenant` scope. If not, request a new token with the correct scopes (see [Retrieving an Access Token](#retrieving-an-access-token)).
 
@@ -263,7 +264,7 @@ You can use tenant features immediately with just the `X-API-Tenant-Id` header, 
 Before setting up a connection, check if one already exists:
 
 ```bash
-curl -X GET https://genial-api.sdu.nl/tenant-connection/status \
+curl -X GET https://api-gateway-authentication-service.prod.sduoneplatform.nl/tenant-connection/status \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -H "X-API-Tenant-Id: your-tenant-id"
 ```
@@ -286,7 +287,7 @@ curl -X GET https://genial-api.sdu.nl/tenant-connection/status \
 If not connected, request a management URL to set up the connection:
 
 ```bash
-curl -X GET https://genial-api.sdu.nl/tenant-connection/management-url \
+curl -X GET https://api-gateway-authentication-service.prod.sduoneplatform.nl/tenant-connection/management-url \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -H "X-API-Tenant-Id: your-tenant-id"
 ```
@@ -295,7 +296,7 @@ curl -X GET https://genial-api.sdu.nl/tenant-connection/management-url \
 
 ```json
 {
-  "url": "https://login.sdu.nl/interaction/connect-tenant?client_id=YOUR_CLIENT_ID&tenant_id=your-tenant-id"
+  "url": "https://oidc.ro2.nl/interaction/connect-tenant/cd2dec55-6138-4513-8103-640426bca752"
 }
 ```
 
@@ -309,7 +310,7 @@ curl -X GET https://genial-api.sdu.nl/tenant-connection/management-url \
 4. **Verify** the connection is complete:
 
 ```bash
-curl -X GET https://genial-api.sdu.nl/tenant-connection/status \
+curl -X GET https://api-gateway-authentication-service.prod.sduoneplatform.nl/tenant-connection/status \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -H "X-API-Tenant-Id: your-tenant-id"
 ```
@@ -326,7 +327,7 @@ Your access level is determined automatically based on your connection status:
 
 | Access Level | When                                       | Rate Limiting                       | What You Can Access                        |
 | ------------ | ------------------------------------------ | ----------------------------------- | ------------------------------------------ |
-| **DEFAULT**  | No tenant ID provided                      | Manual assignment during onboarding | Access with quota defined in your contract |
+| **DEFAULT**  | Using `X-API-Tenant-Id` as single tenant (tenant id === client_id)                      | Manual assignment during onboarding | Access with quota defined in your contract |
 | **TRIAL**    | Using `X-API-Tenant-Id` without connection | Strict limits                       | Access with limited trial quota            |
 | **BASIC**    | Using `X-API-Tenant-Id` with connection    | Standard limits                     | Access with basic quota                    |
 
@@ -353,48 +354,6 @@ Access tokens expire after approximately **2 hours** (7199 seconds). When you re
 - **Cache tokens** until they expire (check `expires_in` in token response)
 - **Refresh proactively** before expiration if possible
 - **Store securely** - never expose tokens in client-side code or logs
-
----
-
-<a name="troubleshooting"></a>
-
-## Troubleshooting
-
-### Error: `401 Unauthorized - User not found for client_id`
-
-**Cause:** No user connection exists for your client.
-
-**Solution:**
-
-- If using tenant access with `X-API-Tenant-Id`: You should automatically get TRIAL plan access. If you see this error, your token might be missing the `sdu-genial-api-multitenant` scope.
-- If using tenant access and want BASIC plan: Complete the tenant connection setup (see [Setting Up Tenant Connection](#setting-up-tenant-connection))
-- If using default access (no tenant ID): Contact support to complete manual onboarding
-
-### Error: `401 Invalid token: missing tenant scope`
-
-**Cause:** Your token doesn't include the required `sdu-genial-api-multitenant` scope for tenant access.
-
-**Solution:** You must request a **new token** with the `sdu-genial-api-multitenant` scope added:
-
-```bash
-curl -X POST https://login.sdu.nl/as/token.oauth2 \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "client_id=YOUR_CLIENT_ID" \
-  -d "client_secret=YOUR_CLIENT_SECRET" \
-  -d "grant_type=client_credentials" \
-  -d "scope=openid sdu-genial-api sdu-genial-api-multitenant"
-```
-
-**Important:** The multi-tenant scope must be included in the original token request. You cannot "upgrade" an existing token - you must request a new one with all required scopes.
-
-### Error: `403 Rate Limit Exceeded`
-
-**Cause:** You've exceeded your usage plan limits.
-
-**Solution:**
-
-- Wait for the rate limit window to reset (typically 1 minute or 1 hour)
-- Contact your account manager to upgrade your usage plan
 
 ---
 
@@ -427,7 +386,7 @@ curl -X POST https://login.sdu.nl/as/token.oauth2 \
 ### Check Connection Status
 
 ```bash
-curl -X GET https://genial-api.sdu.nl/tenant-connection/status \
+curl -X GET https://api-gateway-authentication-service.prod.sduoneplatform.nl/tenant-connection/status \
   -H "Authorization: Bearer {TOKEN}" \
   -H "X-API-Tenant-Id: {TENANT_ID}"
 ```
@@ -435,7 +394,7 @@ curl -X GET https://genial-api.sdu.nl/tenant-connection/status \
 ### Get Management URL
 
 ```bash
-curl -X GET https://genial-api.sdu.nl/tenant-connection/management-url \
+curl -X GET https://api-gateway-authentication-service.prod.sduoneplatform.nl/tenant-connection/management-url \
   -H "Authorization: Bearer {TOKEN}" \
   -H "X-API-Tenant-Id: {TENANT_ID}"
 ```
@@ -443,14 +402,14 @@ curl -X GET https://genial-api.sdu.nl/tenant-connection/management-url \
 ### Make API Request
 
 ```bash
-curl -X POST https://genial-api.sdu.nl/v4/message \
+curl -X POST https://genial-api.sdu.nl/v5/message \
   -H "Authorization: Bearer {TOKEN}" \
   -H "X-API-Tenant-Id: {TENANT_ID}" \
   -H "Content-Type: application/json" \
   -d '{ your request payload }'
 ```
 
-> **Note:** `X-API-Tenant-Id` header is optional - only needed for tenant-specific access. The TenantId needs to be an ID unique to each of your tenants:.
+> **Note:** `X-API-Tenant-Id` header is required, also for single tenant mode - In Single Tenant mode the Tenant ID needs to equal the Client ID. In Multi Tenant mode the TenantId needs to be an ID unique to each of your tenants.
 
 ---
 
