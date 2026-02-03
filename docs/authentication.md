@@ -273,7 +273,22 @@ curl -X GET https://api-gateway-authentication-service.prod.sduoneplatform.nl/te
 
 ```json
 {
-  "connected": true
+  "connected": true,
+  "usageLimits": {
+    "quota": {
+      "limit": 5000,
+      "used": 0,
+      "remaining": 5000,
+      "period": "MONTH",
+      "periodStart": "2026-02-01",
+      "periodEnd": "2026-02-03"
+    },
+    "throttle": {
+      "rateLimit": 10,
+      "burstLimit": 20
+    },
+    "planName": "Standard-Quota"
+  }
 }
 ```
 
