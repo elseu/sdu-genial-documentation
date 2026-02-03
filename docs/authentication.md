@@ -56,7 +56,7 @@ The API supports two authentication modes:
 Before you start, you'll need:
 
 1. **OAuth Client Credentials** (`client_id` and `client_secret`) issued during registration
-2. **API Version** you want to access (e.g., `v1`, `v2`, `v3`, `v4`, `v5`)
+2. **API Version** you want to access (`v5`)
 
 If you don't have credentials yet, please contact your account manager.
 
@@ -207,8 +207,8 @@ All GenIA-L API requests follow this structure:
 https://genial-api.sdu.nl/{VERSION}/{ENDPOINT}
 ```
 
-- **`{VERSION}`**: API version (e.g., `v1`, `v2`, `v3`, `v4`, `v5`)
-- **`{ENDPOINT}`**: Endpoint name (e.g., `step` for v1, `message` for v2+)
+- **`{VERSION}`**: API version (`v5`)
+- **`{ENDPOINT}`**: Endpoint name (`message`)
 
 <a name="basic-api-access"></a>
 
@@ -235,7 +235,7 @@ This provides **default access** - usage plan assignment happens manually during
 To access the API with multiple Tenants, provide unique identifiers for your tenants to the `X-API-Tenant-Id` header. The TenantId needs to be an ID unique to each of your tenants:
 
 ```bash
-curl -X POST https://genial-api.sdu.nl/v4/message \
+curl -X POST https://genial-api.sdu.nl/v5/message \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -H "X-API-Tenant-Id: your-unique-tenant-id" \
   -H "Content-Type: application/json" \
