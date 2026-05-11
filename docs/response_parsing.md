@@ -572,7 +572,8 @@ Each reference in the **references** array has the following properties:
 
 - **chunk_id** (`string`): Identifier of the content chunk.
 - **chunk_txt** (`string`, optional): Text content of the chunk.
-- **chunk_url** (`string`, optional): URL to access the chunk.
+- **chunk_url** (@deprecated `string`, optional): URL to access the chunk.
+- **original_source_url** (`string`, optional): URL to access the chunk.
 - **link_attributes** (`object`, optional): Additional attributes for the link.
 - **title** (`string`): Title of the reference.
 - **source** (`string`, optional): Source identifier.
@@ -1118,6 +1119,7 @@ console.log("Final JSON content parts:", jsonContentParts);
           title: "Title",
           chunk_txt: "Chunk text",
           chunk_url: "https://example.com",
+          original_source_url: "https://example.com",
           link_attributes: {},
           source: "Source",
           publication_identifier: "Publication",

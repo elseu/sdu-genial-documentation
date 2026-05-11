@@ -7,6 +7,16 @@ This repository contains the documentation for connecting to the Sdu GenIA-L API
 
 ## Changelog
 
+### V5
+
+#### 5.0.0 (11-05-2026)
+
+- BREAKING CHANGE: All endpoints require `X-Auth-Tenant-Id` header (see [Authentication](./docs/authentication.md)).
+- `chunk_url` deprecated in favor of `original_source_url`.
+- Rework citation manager for extra citation validation.
+- Richer reasoning steps.
+- Improvements to synthesis constraints for more output control.
+
 ### V4
 
 #### 4.0.0 (20-10-2025)

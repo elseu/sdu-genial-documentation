@@ -52,6 +52,7 @@ POST https://genial-api.sdu.nl/{VERSION}/enhance-prompt
 POST https://genial-api.sdu.nl/v4/enhance-prompt
 Authorization: Bearer eyJraWQiOi...
 Content-Type: application/json
+X-API-Tenant-Id: your-tenant-id
 ```
 
 ---
@@ -160,6 +161,7 @@ The Prompt Enhancement API uses the same authentication mechanism as other GenIA
 
 ```http
 Authorization: Bearer {access_token}
+X-API-Tenant-Id: {your-tenant-id}
 ```
 
 For detailed authentication instructions, refer to the [Authentication Guide](./authentication.md).
