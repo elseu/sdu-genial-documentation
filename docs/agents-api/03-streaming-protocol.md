@@ -75,11 +75,10 @@ start
 text-start
   ├─ data-abusive-check
   ├─ data-filter-messages          (only when there is conversation history)
-  ├─ data-attachments              (only when documents are attached; sent twice)
   ├─ data-planner
   ├─ data-fan-out
   ├─ data-legislation | data-case-law | data-commentary
-  │  | data-practice-notes | data-other-sources | data-document   (in any order, repeatable)
+  │  | data-practice-notes | data-other-sources   (in any order, repeatable)
   ├─ data-verify
   ├─ (planner → fan-out → searches → verify again, if the agent replans)
   ├─ data-template-selector
@@ -99,7 +98,7 @@ Guarantees worth building on:
 - `text-end`, `finish` and `[DONE]` always arrive, in that order, even when the turn failed.
 - `text-delta` frames are only emitted between `text-start` and `text-end`.
 - Progress events are best-effort ordering. Corpus searches run in parallel, so their events interleave and their relative order is not fixed. Do not key logic on which arrives first.
-- The set of progress events varies per turn. A question with no attachments emits no `data-attachments`; a question answered from history alone may emit no search events at all.
+- The set of progress events varies per turn. A question answered from history alone may emit no search events at all.
 
 ## Text events
 
@@ -159,9 +158,7 @@ The agent cites a **passage** of a document, not the document as a whole. Each c
     "document_id": "BWBR0005290",
     "display_title": "Burgerlijk Wetboek Boek 7",
     "original_source_url": "https://…",
-    "passages": [
-      { "identifier": "p-BWBR0005290-7-2", "text": "De huurovereenkomst eindigt…" }
-    ],
+    "passages": [{ "identifier": "p-BWBR0005290-7-2", "text": "De huurovereenkomst eindigt…" }],
     "published": [],
     "about": []
   }
@@ -197,7 +194,7 @@ A marker whose identifier resolves to nothing should be dropped rather than disp
 Every progress frame has the shape:
 
 ```json
-{ "type": "data-<step>", "data": { } }
+{ "type": "data-<step>", "data": {} }
 ```
 
 Some carry an `id`. **An `id` names the item being reported on, not the event.** Two frames sharing an `id` are the same item revised — replace, do not append. Frames without an `id` stand alone.
@@ -217,54 +214,6 @@ Some carry an `id`. **An `id` names the item being reported on, not the event.**
 ```
 
 How many messages of conversation history were judged relevant and kept. Only emitted when you sent a `chatId`.
-
-### `data-attachments`
-
-Sent twice for the same item, both with `"id": "attachments"`, distinguished by `phase`.
-
-Loading:
-
-```json
-{
-  "type": "data-attachments",
-  "id": "attachments",
-  "data": {
-    "phase": "loading",
-    "attachments": [
-      { "id": "9f1c2d3e-…", "label": "Huurovereenkomst.pdf", "kind": "user_upload" }
-    ]
-  }
-}
-```
-
-Done:
-
-```json
-{
-  "type": "data-attachments",
-  "id": "attachments",
-  "data": {
-    "phase": "done",
-    "attachments": [
-      {
-        "id": "9f1c2d3e-…",
-        "label": "Huurovereenkomst.pdf",
-        "kind": "user_upload",
-        "coverage": "full",
-        "status": "ok"
-      }
-    ]
-  }
-}
-```
-
-| Field      | Values                                            | Meaning                                                              |
-| ---------- | ------------------------------------------------- | -------------------------------------------------------------------- |
-| `kind`     | `user_upload`, `corpus`                           | Where the document came from.                                         |
-| `coverage` | `full`, `partial`                                 | Whether the whole document was read or only part of it.               |
-| `status`   | `ok`, `too_large`, `unreadable`, `not_read`       | `not_read` means it was over the 10-attachment cap.                   |
-
-Replace the loading frame with the done frame in your UI; they describe the same attachments.
 
 ### `data-planner`
 
@@ -297,7 +246,7 @@ Which searches were actually dispatched. Useful for showing "searching legislati
 
 ### Search events
 
-`data-legislation`, `data-case-law`, `data-commentary`, `data-practice-notes`, `data-other-sources` and `data-document` all share one shape:
+`data-legislation`, `data-case-law`, `data-commentary`, `data-practice-notes`, and `data-other-sources` all share one shape:
 
 ```json
 {
@@ -393,139 +342,7 @@ When a `data-error` arrives, the answer text is either absent or incomplete. Sho
 
 The full list of in-band errors is in [Errors](01-overview.md#errors).
 
-## Parsing the stream
-
-The rules, in order:
-
-1. Split the stream on blank lines to get frames.
-2. Strip the `data: ` prefix.
-3. If what remains is `[DONE]`, stop.
-4. Parse the rest as JSON and switch on `type`.
-5. Ignore unknown `type` values. New event types are added without a breaking change, and a client that throws on the unfamiliar will break on the next release.
-
-A minimal TypeScript reader:
-
-```ts
-type Frame = { type: string; [key: string]: unknown }
-
-async function* readFrames(response: Response): AsyncGenerator<Frame> {
-  const reader = response.body!.getReader()
-  const decoder = new TextDecoder()
-  let buffer = ""
-
-  for (;;) {
-    const { done, value } = await reader.read()
-    if (done) break
-    buffer += decoder.decode(value, { stream: true })
-
-    // Frames are separated by a blank line; the last piece may be incomplete.
-    const chunks = buffer.split("\n\n")
-    buffer = chunks.pop() ?? ""
-
-    for (const chunk of chunks) {
-      const line = chunk.trim()
-      if (!line.startsWith("data:")) continue
-      const payload = line.slice(5).trim()
-      if (payload === "[DONE]") return
-      yield JSON.parse(payload) as Frame
-    }
-  }
-}
-```
-
-And a consumer that assembles a renderable answer:
-
-```ts
-const BASE_URL = "https://genial-api.sdu.nl/v10"
-
-type Passage = { identifier: string; text: string }
-type Reference = { document_id: string; display_title?: string; passages?: Passage[] }
-
-async function research(body: unknown, token: string, tenantId: string) {
-  const response = await fetch(`${BASE_URL}/agents/research/stream`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "X-API-Tenant-Id": tenantId,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  })
-
-  if (!response.ok) throw new Error(`Request failed: ${response.status}`)
-
-  let text = ""
-  const references = new Map<string, Reference>()
-  const passageToDocument = new Map<string, string>()
-  const progress: Frame[] = []
-  let followups: string[] = []
-  let traceId: string | undefined
-  let error: { message: string; user_message: string } | undefined
-
-  for await (const frame of readFrames(response)) {
-    switch (frame.type) {
-      case "text-delta":
-        text += frame.delta as string
-        break
-
-      case "data-reference": {
-        const reference = frame.data as Reference
-        references.set(frame.id as string, reference)
-        for (const passage of reference.passages ?? []) {
-          passageToDocument.set(passage.identifier, reference.document_id)
-        }
-        break
-      }
-
-      case "data-followup-queries":
-        followups = frame.data as string[]
-        break
-
-      case "data-feedback":
-        traceId = (frame.data as { trace_id: string }).trace_id
-        break
-
-      case "data-error":
-        error = frame.data as typeof error
-        break
-
-      case "start":
-      case "text-start":
-      case "text-end":
-      case "finish":
-        break
-
-      default:
-        // Every remaining data-* frame is a progress update.
-        if (frame.type.startsWith("data-")) progress.push(frame)
-        break
-    }
-  }
-
-  return { text, references, passageToDocument, progress, followups, traceId, error }
-}
-```
-
-Resolving the citations afterwards is a single pass over the text:
-
-```ts
-const CITATION = /<sup>([^<]+)<\/sup>/g
-
-function numberCitations(text: string, passageToDocument: Map<string, string>) {
-  const numbers = new Map<string, number>()
-
-  const rendered = text.replace(CITATION, (whole, passageId: string) => {
-    const documentId = passageToDocument.get(passageId)
-    if (!documentId) return ""          // unresolved marker: drop it
-    if (!numbers.has(passageId)) numbers.set(passageId, numbers.size + 1)
-    return `[^${numbers.get(passageId)}]`
-  })
-
-  return { rendered, numbers }
-}
-```
-
-## Using the AI SDK
+## Parsing the stream using the AI SDK
 
 The stream is emitted in the Vercel AI SDK's UI Message Stream format, so `useChat` consumes it without a custom parser:
 
@@ -538,7 +355,7 @@ const { messages, sendMessage } = useChat({
       "X-API-Tenant-Id": tenantId,
     },
   }),
-})
+});
 ```
 
 Message parts then arrive as `text`, `data-reference`, `data-planner`, `data-legislation` and so on, matching the events above one for one.
@@ -547,3 +364,135 @@ Two things the SDK will not do for you:
 
 - **Citations.** `<sup>…</sup>` markers reach your renderer as literal text. Resolve them against the `data-reference` parts yourself, as shown above.
 - **Errors.** `data-error` is a data part, not the SDK's `error` event, so `onError` never fires for it. Check the parts.
+
+## Parsing the stream (custom)
+
+The rules, in order:
+
+1. Split the stream on blank lines to get frames.
+2. Strip the `data: ` prefix.
+3. If what remains is `[DONE]`, stop.
+4. Parse the rest as JSON and switch on `type`.
+5. Ignore unknown `type` values. New event types are added without a breaking change, and a client that throws on the unfamiliar will break on the next release.
+
+A minimal TypeScript reader:
+
+```ts
+type Frame = { type: string; [key: string]: unknown };
+
+async function* readFrames(response: Response): AsyncGenerator<Frame> {
+  const reader = response.body!.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+
+    // Frames are separated by a blank line; the last piece may be incomplete.
+    const chunks = buffer.split("\n\n");
+    buffer = chunks.pop() ?? "";
+
+    for (const chunk of chunks) {
+      const line = chunk.trim();
+      if (!line.startsWith("data:")) continue;
+      const payload = line.slice(5).trim();
+      if (payload === "[DONE]") return;
+      yield JSON.parse(payload) as Frame;
+    }
+  }
+}
+```
+
+And a consumer that assembles a renderable answer:
+
+```ts
+const BASE_URL = "https://genial-api.sdu.nl/v10";
+
+type Passage = { identifier: string; text: string };
+type Reference = { document_id: string; display_title?: string; passages?: Passage[] };
+
+async function research(body: unknown, token: string, tenantId: string) {
+  const response = await fetch(`${BASE_URL}/agents/research/stream`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "X-API-Tenant-Id": tenantId,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) throw new Error(`Request failed: ${response.status}`);
+
+  let text = "";
+  const references = new Map<string, Reference>();
+  const passageToDocument = new Map<string, string>();
+  const progress: Frame[] = [];
+  let followups: string[] = [];
+  let traceId: string | undefined;
+  let error: { message: string; user_message: string } | undefined;
+
+  for await (const frame of readFrames(response)) {
+    switch (frame.type) {
+      case "text-delta":
+        text += frame.delta as string;
+        break;
+
+      case "data-reference": {
+        const reference = frame.data as Reference;
+        references.set(frame.id as string, reference);
+        for (const passage of reference.passages ?? []) {
+          passageToDocument.set(passage.identifier, reference.document_id);
+        }
+        break;
+      }
+
+      case "data-followup-queries":
+        followups = frame.data as string[];
+        break;
+
+      case "data-feedback":
+        traceId = (frame.data as { trace_id: string }).trace_id;
+        break;
+
+      case "data-error":
+        error = frame.data as typeof error;
+        break;
+
+      case "start":
+      case "text-start":
+      case "text-end":
+      case "finish":
+        break;
+
+      default:
+        // Every remaining data-* frame is a progress update.
+        if (frame.type.startsWith("data-")) progress.push(frame);
+        break;
+    }
+  }
+
+  return { text, references, passageToDocument, progress, followups, traceId, error };
+}
+```
+
+Resolving the citations afterwards is a single pass over the text:
+
+```ts
+const CITATION = /<sup>([^<]+)<\/sup>/g;
+
+function numberCitations(text: string, passageToDocument: Map<string, string>) {
+  const numbers = new Map<string, number>();
+
+  const rendered = text.replace(CITATION, (whole, passageId: string) => {
+    const documentId = passageToDocument.get(passageId);
+    if (!documentId) return ""; // unresolved marker: drop it
+    if (!numbers.has(passageId)) numbers.set(passageId, numbers.size + 1);
+    return `[^${numbers.get(passageId)}]`;
+  });
+
+  return { rendered, numbers };
+}
+```

@@ -11,7 +11,6 @@ You never drive those steps. You send one question and take one answer.
 1. [Choosing streaming or JSON](#choosing-streaming-or-json)
 2. [Request body](#request-body)
    - [Message parts](#message-parts)
-   - [Attaching documents](#attaching-documents)
    - [Conversation history](#conversation-history)
 3. [Example requests](#example-requests)
 4. [The JSON response](#the-json-response)
@@ -79,91 +78,7 @@ The question itself.
 
 Send one text part per turn. If you send several, they are read in order as one question.
 
-#### `source-document` — an uploaded document
-
-References a document you uploaded beforehand. The agent reads it as part of answering.
-
-```json
-{
-  "type": "source-document",
-  "sourceId": "9f1c2d3e-4b5a-6789-0abc-def123456789",
-  "mediaType": "application/pdf",
-  "title": "Arbeidsovereenkomst De Vries.pdf",
-  "filename": "Arbeidsovereenkomst De Vries.pdf"
-}
-```
-
-| Field       | Type     | Required | Description                                   |
-| ----------- | -------- | -------- | --------------------------------------------- |
-| `sourceId`  | `string` | Yes      | The stored document's id.                     |
-| `mediaType` | `string` | Yes      | MIME type, e.g. `application/pdf`.            |
-| `title`     | `string` | Yes      | Shown in progress events and used in prompts. |
-| `filename`  | `string` | No       | Original filename.                            |
-
-#### `source-url` — a corpus document
-
-Points at a document that already exists in the Sdu corpus, by its identifier.
-
-```json
-{
-  "type": "source-url",
-  "sourceId": "ECLI_NL_RBNNE_2023_2863",
-  "url": "http://deeplink.rechtspraak.nl/uitspraak?id=ECLI:NL:RBNNE:2023:2863",
-  "title": "Rechtbank Noord-Nederland, 11-07-2023, ECLI:NL:RBNNE:2023:2863"
-}
-```
-
-| Field              | Type     | Required | Description               |
-| ------------------ | -------- | -------- | ------------------------- |
-| `sourceId`         | `string` | Yes      | Corpus document id.       |
-| `url`              | `string` | Yes      | Where the document lives. |
-| `title`            | `string` | No       | Human-readable label.     |
-| `providerMetadata` | `object` | No       | See below.                |
-
-To point at one **part** of a document — a single article of a statute rather than the whole act — set `providerMetadata.genial.partId`. When present it is used instead of `sourceId` to retrieve the attachment:
-
-```json
-{
-  "type": "source-url",
-  "sourceId": "BWBR0002672",
-  "url": "https://www.ndfr.nl/content/c-NDFR-BWBR0002672-4",
-  "title": "Artikel 4 – Wet op de vennootschapsbelasting 1969",
-  "providerMetadata": { "genial": { "partId": "c-NDFR-BWBR0002672-4" } }
-}
-```
-
 Other AI SDK part types (`reasoning`, `file`, `step-start`, `tool-*`, `data-*`) are accepted by the schema so you can replay a stored conversation unchanged, but they contribute nothing to a user turn.
-
-### Attaching documents
-
-Add `source-document` and `source-url` parts alongside the text part:
-
-```json
-{
-  "message": {
-    "parts": [
-      {
-        "type": "text",
-        "text": "Vat de opzegbepalingen in dit contract samen."
-      },
-      {
-        "type": "source-document",
-        "sourceId": "9f1c2d3e-4b5a-6789-0abc-def123456789",
-        "mediaType": "application/pdf",
-        "title": "Huurovereenkomst.pdf"
-      }
-    ]
-  }
-}
-```
-
-What happens next:
-
-1. Every attachment is scouted — read briefly to work out what it is and what it covers.
-2. The planner decides which attachments each task needs, and whether it needs the whole document or one specific point out of it.
-3. Findings from attachments are cited exactly like corpus findings.
-
-**Limits and failure modes.** At most **10** attachments are read per turn. Anything beyond that is reported back as not read. A document that is too large, or that cannot be parsed, is reported the same way — the turn continues without it and tells you what it skipped, both in the `data-attachments` progress event and in `errors`.
 
 ### Conversation history
 
@@ -262,21 +177,21 @@ curl -X POST https://genial-api.sdu.nl/v10/agents/research \
 }
 ```
 
-| Field                    | Type                                              | Description                                                                                                             |
-| ------------------------ | ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `content`                | `string`                                          | The answer, in Dutch Markdown, with `【†passage_id†】` citation markers inline.                                         |
-| `references`             | `object`                                          | Map of `document_id` → [`SearchResult`](05-schemas.md#searchresult). Everything the answer cites.                          |
-| `legislation_results`    | [`DistilledSource[]`](05-schemas.md#distilledsource) | What the legislation search found and what was distilled from it.                                                       |
-| `case_law_results`       | `DistilledSource[]`                               | Same, for court decisions.                                                                                              |
-| `commentary_results`     | `DistilledSource[]`                               | Same, for scholarly commentary and annotations.                                                                         |
-| `practice_notes_results` | `DistilledSource[]`                               | Same, for practical guidance.                                                                                           |
-| `other_sources_results`  | `DistilledSource[]`                               | Same, for journals, official publications and other secondary material.                                                 |
-| `followup_queries`       | `string[]`                                        | Suggested next questions. See [Follow-up questions](#follow-up-questions).                                              |
-| `researched_plans`       | [`ExecutionPlan[]`](05-schemas.md#executionplan)     | The searches that were actually run, in order.                                                                          |
-| `research_gap`           | `string`                                          | What the verification step judged to be missing. Empty when nothing was.                                                |
-| `replan_count`           | `integer`                                         | How many times the agent went back and searched again. `0` means it got there first time.                               |
-| `legal_areas`            | `string[]`                                        | The Dutch legal area labels the question was classified under, one to three. See [Legal areas](05-schemas.md#legal-areas). |
-| `errors`                 | [`Error[]`](01-overview.md#errors)                   | Non-fatal problems. Empty on a clean turn — **always check it**.                                                        |
+| Field                    | Type                                                 | Description                                                                                                                |
+| ------------------------ | ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `content`                | `string`                                             | The answer, in Dutch Markdown, with `【†passage_id†】` citation markers inline.                                            |
+| `references`             | `object`                                             | Map of `document_id` → [`SearchResult`](05-schemas.md#searchresult). Everything the answer cites.                          |
+| `legislation_results`    | [`DistilledSource[]`](05-schemas.md#distilledsource) | What the legislation search found and what was distilled from it.                                                          |
+| `case_law_results`       | `DistilledSource[]`                                  | Same, for court decisions.                                                                                                 |
+| `commentary_results`     | `DistilledSource[]`                                  | Same, for scholarly commentary and annotations.                                                                            |
+| `practice_notes_results` | `DistilledSource[]`                                  | Same, for practical guidance.                                                                                              |
+| `other_sources_results`  | `DistilledSource[]`                                  | Same, for journals, official publications and other secondary material.                                                    |
+| `followup_queries`       | `string[]`                                           | Suggested next questions. See [Follow-up questions](#follow-up-questions).                                                 |
+| `researched_plans`       | [`ExecutionPlan[]`](05-schemas.md#executionplan)     | The searches that were actually run, in order.                                                                             |
+| `research_gap`           | `string`                                             | What the verification step judged to be missing. Empty when nothing was.                                                   |
+| `replan_count`           | `integer`                                            | How many times the agent went back and searched again. `0` means it got there first time.                                  |
+| `legal_areas`            | `string[]`                                           | The Dutch legal area labels the question was classified under, one to three. See [Legal areas](05-schemas.md#legal-areas). |
+| `errors`                 | [`Error[]`](01-overview.md#errors)                   | Non-fatal problems. Empty on a clean turn — **always check it**.                                                           |
 
 Note that the five `*_results` arrays hold everything that was **found**, which is a superset of what the answer ended up **citing**. `references` holds what was cited. Render from `references`; use the `*_results` arrays when you want to show the full research trail.
 
@@ -304,7 +219,7 @@ Markers use the full-width brackets `【` `】` with a dagger `†` immediately 
 
 ## Follow-up questions
 
-`followup_queries` holds suggested next questions in Dutch, derived from what the research turned up. They are meant to be offered to the user as one-click prompts. Sending one back as the next turn's text — with the same `chatId` — continues the conversation. The array can be empty.
+`followup_queries` holds suggested next questions in Dutch, derived from what the research turned up. They are meant to be offered to the user as one-click prompts. The array can be empty.
 
 ## Errors
 
@@ -312,12 +227,9 @@ Request-level failures (`401`, `403`, `422`, `429`) are described in [Errors](01
 
 Everything else surfaces in the `errors` array with `200 OK`. The common cases:
 
-| `message`                                                        | What it means                                                       |
-| ---------------------------------------------------------------- | ------------------------------------------------------------------- |
-| `No search results found for the user's query.`                  | Nothing relevant was found. `content` will not carry a real answer. |
-| `API error`                                                      | An upstream dependency failed mid-turn.                             |
-| `Attached document exceeds the maximum size that can be read.`   | One attachment was too large; the rest of the turn continued.       |
-| `Attached document could not be read.`                           | One attachment was unparseable or unavailable.                      |
-| `More documents were attached than can be read in one question.` | Over the 10-attachment cap; the excess was ignored.                 |
+| `message`                                       | What it means                                                       |
+| ----------------------------------------------- | ------------------------------------------------------------------- |
+| `No search results found for the user's query.` | Nothing relevant was found. `content` will not carry a real answer. |
+| `API error`                                     | An upstream dependency failed mid-turn.                             |
 
 Each carries a Dutch `user_message` written to be displayed as-is. Show that, not `message`.
