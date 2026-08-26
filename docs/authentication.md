@@ -226,7 +226,7 @@ curl -X POST https://genial-api.sdu.nl/v5/message \
 
 This provides **default access** - usage plan assignment happens manually during onboarding.
 
-> **Note:** For detailed information about request payloads and response structure, refer to the [Response Parsing Documentation](response_parsing.md).
+> **Note:** For detailed information about request payloads and response structure, refer to the [Agents API Overview](agents-api/01-overview.md).
 
 <a name="multi-tenant-api-access"></a>
 
@@ -434,6 +434,6 @@ curl -X POST https://genial-api.sdu.nl/v5/message \
 
 - [Ping Identity OAuth 2.0 Developer Guide](https://docs.pingidentity.com/developer-resources/oauth_20_developer_guide/client-credentials-grant-type.html)
 - [OpenID Configuration](https://federate.prod.ping.awssdu.nl/.well-known/openid-configuration)
-- [Response Parsing Documentation](response_parsing.md) - Details about request payloads and response structure for the `/message` endpoint
+- [Agents API Overview](agents-api/01-overview.md) - Base URL, endpoints, headers, rate limits and errors for the `/agents` endpoints
 
 ---

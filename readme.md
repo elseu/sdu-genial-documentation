@@ -2,10 +2,28 @@ This repository contains the documentation for connecting to the Sdu GenIA-L API
 
 ## Documentation
 
-- [Authentication](./docs/authentication.md)
-- [Response Parsing](./docs/response_parsing.md)
+Start with authentication, then the overview — it links on to everything else.
+
+- [Authentication](./docs/authentication.md) — obtaining an access token, tenants and access levels
+
+### [Agents API](./docs/agents-api/) — v10 and later
+
+1. [Overview](./docs/agents-api/01-overview.md) — base URL, endpoints, headers, rate limits and errors
+2. [Research agent](./docs/agents-api/02-research-agent.md) — `POST /agents/research` and `POST /agents/research/stream`
+3. [Streaming protocol](./docs/agents-api/03-streaming-protocol.md) — every SSE event, in order, with a worked parser
+4. [Corpus agents](./docs/agents-api/04-corpus-agents.md) — the five `POST /agents/search/*` endpoints
+5. [Schemas](./docs/agents-api/05-schemas.md) — shared objects and the legal area codes
 
 ## Changelog
+
+### V10
+
+#### 10.0.0
+
+- Added the Agents API: a research agent (`/agents/research`, `/agents/research/stream`) and five corpus search agents (`/agents/search/*`). See the [Agents API Overview](./docs/agents-api/01-overview.md).
+- The research stream is emitted in the AI SDK UI Message Stream format, replacing the content-part stream of `/message`. See [Streaming protocol](./docs/agents-api/03-streaming-protocol.md).
+- Answers cite passages rather than documents; every citation resolves to the exact passage it rests on. See [Citations](./docs/agents-api/02-research-agent.md#citations).
+- Removed the Response Parsing and Prompt Enhancer documentation, which covered the `/message` and `/enhance-prompt` endpoints of earlier versions.
 
 ### V5
 
