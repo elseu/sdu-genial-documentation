@@ -10,7 +10,7 @@ Read them in order — each page assumes the one before it.
 | 1   | [Overview](01-overview.md)                     | Base URL, endpoints, headers, rate limits, errors |
 | 2   | [Research agent](02-research-agent.md)         | `/agents/research` and `/agents/research/stream`  |
 | 3   | [Streaming protocol](03-streaming-protocol.md) | Every SSE event, in order, with a worked parser   |
-| 4   | [Corpus agents](04-corpus-agents.md)           | The five `/agents/search/*` endpoints             |
+| 4   | [Corpus agents](04-corpus-agents.md)           | The `/agents/search/*` endpoints                  |
 | 5   | [Schemas](05-schemas.md)                       | Shared objects and the legal area codes           |
 
 Authentication is documented separately, in [Authentication](../authentication.md). Start there:

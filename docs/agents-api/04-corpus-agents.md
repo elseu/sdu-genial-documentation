@@ -8,7 +8,7 @@ Use these when you are building your own experience on top of the corpus: a sear
 
 ## Table of contents
 
-1. [The five endpoints](#the-five-endpoints)
+1. [The endpoints](#the-endpoints)
 2. [Request body](#request-body)
 3. [Restricting by legal area](#restricting-by-legal-area)
 4. [Example request](#example-request)
@@ -18,17 +18,19 @@ Use these when you are building your own experience on top of the corpus: a sear
 
 ---
 
-## The five endpoints
+## The endpoints
 
-| Endpoint                        | Corpus                                                                                    |
-| ------------------------------- | ----------------------------------------------------------------------------------------- |
-| `POST /agents/search/legislation`    | Dutch national legislation: acts, orders in council, ministerial and policy rules. Searches law currently in force. |
-| `POST /agents/search/case_law`       | Court decisions, from the Hoge Raad and the highest appeal bodies down through the courts of appeal, district courts, supervisory and disciplinary bodies. |
-| `POST /agents/search/commentary`     | Scholarly commentary and annotations on legislation and case law.                     |
-| `POST /agents/search/practice_notes` | Practice notes: practical, how-to guidance.                                           |
-| `POST /agents/search/other_sources`  | Everything else: journal articles, news, parliamentary papers, official publications, explanatory memoranda, overviews and tools. |
+| Endpoint                               | Corpus                                                                                                                                                     |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /agents/search/legislation`      | Dutch national legislation: acts, orders in council, ministerial and policy rules. Searches law currently in force.                                        |
+| `POST /agents/search/eu_legislation`   | EU legislation as it applies in the Netherlands: regulations, directives and other EU instruments. Searches instruments currently in force.                |
+| `POST /agents/search/case_law`         | Court decisions, from the Hoge Raad and the highest appeal bodies down through the courts of appeal, district courts, supervisory and disciplinary bodies. |
+| `POST /agents/search/commentary`       | Scholarly commentary and annotations on legislation and case law.                                                                                          |
+| `POST /agents/search/journal_articles` | Articles in Dutch legal and tax journals, discussing legislation and case law.                                                                             |
+| `POST /agents/search/practice_notes`   | Practice notes: practical, how-to guidance.                                                                                                                |
+| `POST /agents/search/other_sources`    | Everything else: books, blogs, in-depth pieces, news, parliamentary papers, official publications, explanatory memoranda, overviews and tools.             |
 
-All five take the same request and return the same response shape. Only the corpus differs.
+They all take the same request and return the same response shape. Only the corpus differs.
 
 ## Request body
 

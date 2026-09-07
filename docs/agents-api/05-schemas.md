@@ -101,11 +101,11 @@ One document, reduced to what it contributes to the question. Appears in `findin
 
 One search the research agent decided to run. Appears in `researched_plans` and in the `data-planner` progress event.
 
-| Field              | Type               | Description                                                                               |
-| ------------------ | ------------------ | ----------------------------------------------------------------------------------------- |
-| `legal_issue`      | `string`           | The Dutch query this search ran.                                                          |
-| `agent`            | `string`           | `legislation`, `case_law`, `commentary`, `practice_notes`, `other_sources` or `document`. |
-| `legal_area_facet` | `string[] \| null` | Legal area codes the search was restricted to. `null` means unrestricted.                 |
+| Field              | Type               | Description                                                                                                                     |
+| ------------------ | ------------------ | ------------------------------------------------------------------------------------------------------------------------------- |
+| `legal_issue`      | `string`           | The Dutch query this search ran.                                                                                                |
+| `agent`            | `string`           | `legislation`, `eu_legislation`, `case_law`, `commentary`, `journal_articles`, `practice_notes`, `other_sources` or `document`. |
+| `legal_area_facet` | `string[] \| null` | Legal area codes the search was restricted to. `null` means unrestricted.                                                       |
 
 ## `Error`
 

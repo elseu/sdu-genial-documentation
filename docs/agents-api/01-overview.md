@@ -1,5 +1,6 @@
 # GenIA-L Agents API
 
+**NOTE: The V10 Agents API is in alpha and subject to change.**
 The Agents API answers Dutch legal questions over the Sdu corpus. It exposes two kinds of endpoint:
 
 - **The research agent** — plans a research strategy, searches every relevant corpus, reads what it finds and writes a cited answer. Available streaming (SSE) and non-streaming (JSON).
@@ -33,25 +34,27 @@ https://genial-api.sdu.nl/{VERSION}/agents/...
 
 ## Endpoints
 
-| Method | Path                            | Answers with     | Documented in                                                                    |
-| ------ | ------------------------------- | ---------------- | -------------------------------------------------------------------------------- |
-| `POST` | `/agents/research/stream`       | SSE event stream | [Research agent](02-research-agent.md), [Streaming protocol](03-streaming-protocol.md) |
-| `POST` | `/agents/research`              | JSON             | [Research agent](02-research-agent.md)                                              |
-| `POST` | `/agents/search/legislation`    | JSON             | [Corpus agents](04-corpus-agents.md)                                                |
-| `POST` | `/agents/search/case_law`       | JSON             | [Corpus agents](04-corpus-agents.md)                                                |
-| `POST` | `/agents/search/commentary`     | JSON             | [Corpus agents](04-corpus-agents.md)                                                |
-| `POST` | `/agents/search/practice_notes` | JSON             | [Corpus agents](04-corpus-agents.md)                                                |
-| `POST` | `/agents/search/other_sources`  | JSON             | [Corpus agents](04-corpus-agents.md)                                                |
+| Method | Path                              | Answers with     | Documented in                                                                          |
+| ------ | --------------------------------- | ---------------- | -------------------------------------------------------------------------------------- |
+| `POST` | `/agents/research/stream`         | SSE event stream | [Research agent](02-research-agent.md), [Streaming protocol](03-streaming-protocol.md) |
+| `POST` | `/agents/research`                | JSON             | [Research agent](02-research-agent.md)                                                 |
+| `POST` | `/agents/search/legislation`      | JSON             | [Corpus agents](04-corpus-agents.md)                                                   |
+| `POST` | `/agents/search/eu_legislation`   | JSON             | [Corpus agents](04-corpus-agents.md)                                                   |
+| `POST` | `/agents/search/case_law`         | JSON             | [Corpus agents](04-corpus-agents.md)                                                   |
+| `POST` | `/agents/search/commentary`       | JSON             | [Corpus agents](04-corpus-agents.md)                                                   |
+| `POST` | `/agents/search/journal_articles` | JSON             | [Corpus agents](04-corpus-agents.md)                                                   |
+| `POST` | `/agents/search/practice_notes`   | JSON             | [Corpus agents](04-corpus-agents.md)                                                   |
+| `POST` | `/agents/search/other_sources`    | JSON             | [Corpus agents](04-corpus-agents.md)                                                   |
 
 Every endpoint is `POST` with a JSON body, and every endpoint requires authentication.
 
 ## Request headers
 
-| Header            | Required | Value                                                             |
-| ----------------- | -------- | ----------------------------------------------------------------- |
+| Header            | Required | Value                                                                |
+| ----------------- | -------- | -------------------------------------------------------------------- |
 | `Authorization`   | Yes      | `Bearer <access_token>` — see [Authentication](../authentication.md) |
 | `X-API-Tenant-Id` | Yes      | Your tenant identifier — see [Authentication](../authentication.md)  |
-| `Content-Type`    | Yes      | `application/json`                                                |
+| `Content-Type`    | Yes      | `application/json`                                                   |
 
 ## Naming conventions
 
@@ -145,6 +148,6 @@ If you put a proxy in front of the streaming endpoint, disable response bufferin
 
 - [Research agent](02-research-agent.md) — request shape, attachments, conversation history, the JSON response
 - [Streaming protocol](03-streaming-protocol.md) — every SSE event, in order, with a worked parser
-- [Corpus agents](04-corpus-agents.md) — the five single-corpus search endpoints
+- [Corpus agents](04-corpus-agents.md) — the single-corpus search endpoints
 - [Schemas](05-schemas.md) — shared objects, and the legal area codes
 - [Authentication](../authentication.md) — obtaining and using an access token

@@ -157,8 +157,10 @@ curl -X POST https://genial-api.sdu.nl/v10/agents/research \
       ]
     }
   ],
+  "eu_legislation_results": [],
   "case_law_results": [],
   "commentary_results": [],
+  "journal_articles_results": [],
   "practice_notes_results": [],
   "other_sources_results": [],
   "followup_queries": ["Wat gebeurt er bij stilzwijgende verlenging?"],
@@ -177,23 +179,25 @@ curl -X POST https://genial-api.sdu.nl/v10/agents/research \
 }
 ```
 
-| Field                    | Type                                                 | Description                                                                                                                |
-| ------------------------ | ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `content`                | `string`                                             | The answer, in Dutch Markdown, with `【†passage_id†】` citation markers inline.                                            |
-| `references`             | `object`                                             | Map of `document_id` → [`SearchResult`](05-schemas.md#searchresult). Everything the answer cites.                          |
-| `legislation_results`    | [`DistilledSource[]`](05-schemas.md#distilledsource) | What the legislation search found and what was distilled from it.                                                          |
-| `case_law_results`       | `DistilledSource[]`                                  | Same, for court decisions.                                                                                                 |
-| `commentary_results`     | `DistilledSource[]`                                  | Same, for scholarly commentary and annotations.                                                                            |
-| `practice_notes_results` | `DistilledSource[]`                                  | Same, for practical guidance.                                                                                              |
-| `other_sources_results`  | `DistilledSource[]`                                  | Same, for journals, official publications and other secondary material.                                                    |
-| `followup_queries`       | `string[]`                                           | Suggested next questions. See [Follow-up questions](#follow-up-questions).                                                 |
-| `researched_plans`       | [`ExecutionPlan[]`](05-schemas.md#executionplan)     | The searches that were actually run, in order.                                                                             |
-| `research_gap`           | `string`                                             | What the verification step judged to be missing. Empty when nothing was.                                                   |
-| `replan_count`           | `integer`                                            | How many times the agent went back and searched again. `0` means it got there first time.                                  |
-| `legal_areas`            | `string[]`                                           | The Dutch legal area labels the question was classified under, one to three. See [Legal areas](05-schemas.md#legal-areas). |
-| `errors`                 | [`Error[]`](01-overview.md#errors)                   | Non-fatal problems. Empty on a clean turn — **always check it**.                                                           |
+| Field                      | Type                                                 | Description                                                                                                                |
+| -------------------------- | ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `content`                  | `string`                                             | The answer, in Dutch Markdown, with `【†passage_id†】` citation markers inline.                                              |
+| `references`               | `object`                                             | Map of `document_id` → [`SearchResult`](05-schemas.md#searchresult). Everything the answer cites.                          |
+| `legislation_results`      | [`DistilledSource[]`](05-schemas.md#distilledsource) | What the Dutch legislation search found and what was distilled from it.                                                    |
+| `eu_legislation_results`   | `DistilledSource[]`                                  | Same, for EU regulations, directives and other EU instruments.                                                             |
+| `case_law_results`         | `DistilledSource[]`                                  | Same, for court decisions.                                                                                                 |
+| `commentary_results`       | `DistilledSource[]`                                  | Same, for scholarly commentary and annotations.                                                                            |
+| `journal_articles_results` | `DistilledSource[]`                                  | Same, for articles in legal and tax journals.                                                                              |
+| `practice_notes_results`   | `DistilledSource[]`                                  | Same, for practical guidance.                                                                                              |
+| `other_sources_results`    | `DistilledSource[]`                                  | Same, for books, blogs, news, official publications and other secondary material.                                          |
+| `followup_queries`         | `string[]`                                           | Suggested next questions. See [Follow-up questions](#follow-up-questions).                                                 |
+| `researched_plans`         | [`ExecutionPlan[]`](05-schemas.md#executionplan)     | The searches that were actually run, in order.                                                                             |
+| `research_gap`             | `string`                                             | What the verification step judged to be missing. Empty when nothing was.                                                   |
+| `replan_count`             | `integer`                                            | How many times the agent went back and searched again. `0` means it got there first time.                                  |
+| `legal_areas`              | `string[]`                                           | The Dutch legal area labels the question was classified under, one to three. See [Legal areas](05-schemas.md#legal-areas). |
+| `errors`                   | [`Error[]`](01-overview.md#errors)                   | Non-fatal problems. Empty on a clean turn — **always check it**.                                                           |
 
-Note that the five `*_results` arrays hold everything that was **found**, which is a superset of what the answer ended up **citing**. `references` holds what was cited. Render from `references`; use the `*_results` arrays when you want to show the full research trail.
+Note that the `*_results` arrays hold everything that was **found**, which is a superset of what the answer ended up **citing**. `references` holds what was cited. Render from `references`; use the `*_results` arrays when you want to show the full research trail.
 
 ## Citations
 

@@ -77,8 +77,9 @@ text-start
   ├─ data-filter-messages          (only when there is conversation history)
   ├─ data-planner
   ├─ data-fan-out
-  ├─ data-legislation | data-case-law | data-commentary
-  │  | data-practice-notes | data-other-sources   (in any order, repeatable)
+  ├─ data-legislation | data-eu-legislation | data-case-law
+  │  | data-commentary | data-journal-articles | data-practice-notes
+  │  | data-other-sources                             (in any order, repeatable)
   ├─ data-verify
   ├─ (planner → fan-out → searches → verify again, if the agent replans)
   ├─ data-template-selector
@@ -246,7 +247,7 @@ Which searches were actually dispatched. Useful for showing "searching legislati
 
 ### Search events
 
-`data-legislation`, `data-case-law`, `data-commentary`, `data-practice-notes`, and `data-other-sources` all share one shape:
+`data-legislation`, `data-eu-legislation`, `data-case-law`, `data-commentary`, `data-journal-articles`, `data-practice-notes`, and `data-other-sources` all share one shape:
 
 ```json
 {
