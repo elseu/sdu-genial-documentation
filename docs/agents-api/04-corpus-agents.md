@@ -9,12 +9,13 @@ Use these when you are building your own experience on top of the corpus: a sear
 ## Table of contents
 
 1. [The endpoints](#the-endpoints)
-2. [Request body](#request-body)
-3. [Restricting by legal area](#restricting-by-legal-area)
-4. [Example request](#example-request)
-5. [Response](#response)
-6. [Reading the results](#reading-the-results)
-7. [Errors](#errors)
+2. [Choosing an agent](#choosing-an-agent)
+3. [Request body](#request-body)
+4. [Restricting by legal area](#restricting-by-legal-area)
+5. [Example request](#example-request)
+6. [Response](#response)
+7. [Reading the results](#reading-the-results)
+8. [Errors](#errors)
 
 ---
 
@@ -32,6 +33,28 @@ Use these when you are building your own experience on top of the corpus: a sear
 
 They all take the same request and return the same response shape. Only the corpus differs.
 
+## Choosing an agent
+
+Most substantive questions need more than one agent. Call them in parallel, one request per agent per legal concept, and merge the findings yourself. Phrase `legalIssue` for the agent you are calling. The styles below differ on purpose, because each corpus retrieves well on a different kind of text.
+
+| Agent              | Call it when you need                                                                   | What it searches                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | How to phrase `legalIssue`                                                                                                                                                                                                                                   |
+| ------------------ | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `legislation`      | Findings on a Dutch statute, provision or statutory concept                             | Wetten, AMvB's, ministeriële regelingen, beleidsregels, koninklijke besluiten. Current version only.                                                                                                                                                                                                                                                                                                                                                                                                                                             | A keyword-dense statutory concept of three to five content words, no facts from the case. `verzuim ingebrekestelling nakoming verbintenis`, `opzegging huurovereenkomst woonruimte`. One concept per call.                                                   |
+| `eu_legislation`   | An EU regulation or directive that governs the matter, whether or not the user named it | EU regulations and directives as they apply in the Netherlands. Data protection, VAT, consumer rights, competition, product safety, social security coordination and the like.                                                                                                                                                                                                                                                                                                                                                                   | Same keyword style, but name the instrument the way a Dutch lawyer says it. `algemene verordening gegevensbescherming rechtmatigheid verwerking`, `btw-richtlijn plaats van dienst`. Pair it with a `legislation` call for the Dutch implementing provision. |
+| `case_law`         | How courts have applied the law to facts like these                                     | Rulings from all Dutch courts and tribunals plus European instances. Three searches run at once: lower and other courts, the Hoge Raad and highest appeal courts, and up to five landmark ECLIs.                                                                                                                                                                                                                                                                                                                                                 | A fluent Dutch sentence that reads like a case summary and includes the concrete circumstances (who, what happened, amounts, durations). Leave out request words such as "uitspraken uit 2024 over".                                                         |
+| `commentary`       | The current, maintained statement of a rule, anchored to a provision                    | Scholarly commentary and annotations on legislation and case law, each piece anchored to a specific provision.                                                                                                                                                                                                                                                                                                                                                                                                                                   | A topic phrase around the provision or doctrine.                                                                                                                                                                                                             |
+| `journal_articles` | Argument rather than settled statement                                                  | Articles in legal and tax journals.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | A topic phrase around the issue itself, not an article number, and without period words.                                                                                                                                                                     |
+| `practice_notes`   | Procedural or how-to guidance                                                           | Practice notes and practical step-by-step material.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | A topic phrase around the task the practitioner has to carry out.                                                                                                                                                                                            |
+| `other_sources`    | Background, legislative history, official publications, news or tools                   | Kamerstukken, Kamervragen, Handelingen and the memorie van toelichting, moties, amendementen and rapporten within them. Staatsblad, Staatscourant, Tractatenblad, permits, collective labour agreement notices, ministerial regulations and policy rules. Belastingdienst kennisgroepstandpunten. Legal news and current-awareness bulletins. Books and handbooks. Practitioner blogs. Model documents, checklists, decision trees and calculators. Legislative tracking overviews. Convenanten, gedragscodes and industry terms and conditions. | A topic phrase around the matter, for instance `memorie van toelichting Wet bescherming klokkenluiders`.                                                                                                                                                     |
+
+Combining agents:
+
+- A statutory concept with a dispute or interpretation angle needs `legislation` and `case_law`. Add `commentary` when the reader needs the settled reading of the provision.
+- An EU instrument governing the matter needs `eu_legislation` and `legislation` both. A directive only works through its Dutch implementing provision, and the two corpora are separate.
+- `commentary` and `journal_articles` answer different questions. Commentary gives the maintained statement of the rule. Journal articles give argument. Call `journal_articles` for a contested or unsettled point, a development too recent for a maintained commentary to have absorbed, a case note on a specific ruling, or a niche or cross-domain question. Call both when the matter has both angles.
+- A matter that combines a general doctrine (wanprestatie, onrechtmatige daad) with a specific statutory regime (oplevering bij aanneming, huurrecht) gets one `legislation` call per concept. Combined queries retrieve poorly.
+- A purely definitional lookup of a statutory term, with no dispute angle, needs `legislation` alone.
+
 ## Request body
 
 ```json
@@ -41,10 +64,10 @@ They all take the same request and return the same response shape. Only the corp
 }
 ```
 
-| Field            | Type       | Required | Description                                                                  |
-| ---------------- | ---------- | -------- | ---------------------------------------------------------------------------- |
-| `legalIssue`     | `string`   | Yes      | The legal issue to search for, phrased in Dutch.                             |
-| `legalAreaFacet` | `string[]` | No       | Legal area codes to restrict the search to. Omit to search unrestricted.     |
+| Field            | Type       | Required | Description                                                              |
+| ---------------- | ---------- | -------- | ------------------------------------------------------------------------ |
+| `legalIssue`     | `string`   | Yes      | The legal issue to search for, phrased in Dutch.                         |
+| `legalAreaFacet` | `string[]` | No       | Legal area codes to restrict the search to. Omit to search unrestricted. |
 
 Both `legalIssue` / `legal_issue` and `legalAreaFacet` / `legal_area_facet` are accepted.
 
@@ -117,11 +140,11 @@ curl -X POST https://genial-api.sdu.nl/v10/agents/search/case_law \
 }
 ```
 
-| Field        | Type                                              | Description                                                                     |
-| ------------ | ------------------------------------------------- | ------------------------------------------------------------------------------- |
-| `findings`   | [`DistilledSource[]`](05-schemas.md#distilledsource) | One entry per document found, with the findings drawn from it.                   |
-| `references` | `object`                                          | Map of `document_id` → [`SearchResult`](05-schemas.md#searchresult). The documents themselves. |
-| `errors`     | [`Error[]`](01-overview.md#errors)                   | Non-fatal problems. Empty on a clean search.                                     |
+| Field        | Type                                                 | Description                                                                                    |
+| ------------ | ---------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `findings`   | [`DistilledSource[]`](05-schemas.md#distilledsource) | One entry per document found, with the findings drawn from it.                                 |
+| `references` | `object`                                             | Map of `document_id` → [`SearchResult`](05-schemas.md#searchresult). The documents themselves. |
+| `errors`     | [`Error[]`](01-overview.md#errors)                   | Non-fatal problems. Empty on a clean search.                                                   |
 
 Responses are `snake_case`, including the nested objects. Note the doubled name: `findings[].findings` is the list of findings inside one document.
 
