@@ -44,6 +44,7 @@ https://genial-api.sdu.nl/{VERSION}/agents/...
 | `POST` | `/agents/search/commentary`       | JSON             | [Corpus agents](04-corpus-agents.md)                                                   |
 | `POST` | `/agents/search/journal_articles` | JSON             | [Corpus agents](04-corpus-agents.md)                                                   |
 | `POST` | `/agents/search/practice_notes`   | JSON             | [Corpus agents](04-corpus-agents.md)                                                   |
+| `POST` | `/agents/search/news`             | JSON             | [Corpus agents](04-corpus-agents.md)                                                   |
 | `POST` | `/agents/search/other_sources`    | JSON             | [Corpus agents](04-corpus-agents.md)                                                   |
 
 Every endpoint is `POST` with a JSON body, and every endpoint requires authentication.
