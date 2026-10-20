@@ -162,6 +162,7 @@ curl -X POST https://genial-api.sdu.nl/v10/agents/research \
   "commentary_results": [],
   "journal_articles_results": [],
   "practice_notes_results": [],
+  "news_results": [],
   "other_sources_results": [],
   "followup_queries": ["Wat gebeurt er bij stilzwijgende verlenging?"],
   "researched_plans": [
@@ -189,7 +190,8 @@ curl -X POST https://genial-api.sdu.nl/v10/agents/research \
 | `commentary_results`       | `DistilledSource[]`                                  | Same, for scholarly commentary and annotations.                                                                            |
 | `journal_articles_results` | `DistilledSource[]`                                  | Same, for articles in legal and tax journals.                                                                              |
 | `practice_notes_results`   | `DistilledSource[]`                                  | Same, for practical guidance.                                                                                              |
-| `other_sources_results`    | `DistilledSource[]`                                  | Same, for books, blogs, news, official publications and other secondary material.                                          |
+| `news_results`             | `DistilledSource[]`                                  | Same, for legal news and current-awareness bulletins.                                                                      |
+| `other_sources_results`    | `DistilledSource[]`                                  | Same, for books, blogs, official publications and other secondary material.                                                |
 | `followup_queries`         | `string[]`                                           | Suggested next questions. See [Follow-up questions](#follow-up-questions).                                                 |
 | `researched_plans`         | [`ExecutionPlan[]`](05-schemas.md#executionplan)     | The searches that were actually run, in order.                                                                             |
 | `research_gap`             | `string`                                             | What the verification step judged to be missing. Empty when nothing was.                                                   |
